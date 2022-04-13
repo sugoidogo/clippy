@@ -8,7 +8,8 @@
     }
 </style>
 <script>
-    let pass, login, commands, irc, mods, client_id, intervalID, delay;
+    let pass, login, commands, irc, mods, client_id, intervalID, timeoutID, delay;
+    let queue=[]
     const iframe=document.getElementsByTagName('iframe')[0]
 
     function send(message){
@@ -22,6 +23,10 @@
 
     function clearFrame(){
         iframe.src='';
+        timeoutID=null;
+        if(queue.length){
+            shoutout(queue.unshift());
+        }
     }
 
     function getAuthHeaders(){
@@ -44,6 +49,10 @@
     }
 
     async function shoutout(target){
+        if(timeoutID){
+            queue.push(target)
+            return;
+        }
         console.log("! shoutout:"+target);
         target=await getBroadcasterId(target);
         const response=await fetch('https://api.twitch.tv/helix/clips'
@@ -60,7 +69,7 @@
         const URL=json['data'][index]['embed_url']+'&autoplay=true&parent='+window.location.hostname;
         const duration=json['data'][index]['duration']*1000;
         iframe.src=URL
-        setTimeout(clearFrame,duration+delay);
+        timeoutID=setTimeout(clearFrame,duration+delay);
     }
 
     function onopen(event){
