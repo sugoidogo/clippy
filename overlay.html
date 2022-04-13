@@ -104,7 +104,8 @@
             console.error(event)
             console.error('when attempting to reconnect, another error occured')
             console.error(e)
-            alert(event)
+        } finally {
+            throw event
         }
     }
 
