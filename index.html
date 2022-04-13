@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<body>
+    <h1>Clippy</h1>
+    <p>Use the controls below to change settings for your overlay.
+    Press "Copy Overlay URL" <b>after</b> you change any settings,
+    then paste into your browser source url.</p>
+    <p id="login" style="display: none;"></p>
+    <p id="pass" style="display: none;"></p>
+    <button onclick="copyURL()">Copy Overlay URL</button>
+    <input id='newCommand' type="text"/><button onclick="addCommand()">Add Command</button>
+    <p>Click on a command to remove it</p>
+    <ul>
+        <li><button class="command" onclick="removeCommand(this)">!so</button></li>
+        <li><button class="command" onclick="removeCommand(this)">!shoutout</button></li>
+    </ul>
+</body>
+<script>
+    const client_id='72wtxvzs6erokrj33lk105whmoo381';
+    const newCommandHTML='<li><button class="command" onclick="removeCommand(this)">!command</button></li>';
+    const overlayURLBase='https://sugoidogo.github.io/clippy/overlay';
+    const newCommand=document.getElementById('newCommand');
+    const commands=document.getElementById('commands');
+    const login=document.getElementById('login');
+    const pass=document.getElementById('pass');
+
+    async function getPass() {
+        try {
+            const pass = new URLSearchParams(document.location.hash.replace('#', '?')).get('access_token')
+            if (!pass) {
+                throw 'missing access token'
+            }
+            return pass;
+        } catch (e) {
+            window.location.href = encodeURI(
+                'https://id.twitch.tv/oauth2/authorize'
+                + '?response_type=token'
+                + '&client_id='+client_id
+                + '&redirect_uri=https://sugoidogo.github.io/clippy'
+                + '&scope=chat:read chat:edit'
+            )
+            throw e;
+        }
+    }
+
+    async function getLogin(pass) {
+        const response=await fetch('https://api.twitch.tv/helix/users'
+            ,{
+                headers:{
+                    'Authorization':'Bearer '+pass
+                    ,'Client-Id':client_id
+                }
+            }
+        )
+        const json=await response.json()
+        return json['data'][0]['login'];
+    }
+
+    async function init(){
+        pass.value=await getPass();
+        login.value=await getLogin(pass.value);
+    }
+
+    async function removeCommand(element){
+        element.parentElement.remove()
+    }
+
+    async function addCommand(){
+        const commandName=newCommand.value;
+        const commandHTML=newCommandHTML.replace('!command',commandName);
+        commands.innerHTML+=commandHTML;
+    }
+
+    async function copyURL(){
+        let URL=overlayURLBase
+            +'?client_id='+client_id
+            +'?login='+login.value
+            +'&pass='+pass.value
+            +'&commands='
+        ;
+        for (const button of document.getElementsByClassName('command')){
+            URL+=button.innerHTML+','
+        }
+        URL=encodeURI(URL);
+        navigator.clipboard.writeText(URL);
+    }
+
+    init();
+
+</script>
