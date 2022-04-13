@@ -98,7 +98,8 @@
             }
 
             for (const command of commands){
-                if(line.includes(command)){
+                const user=line.substring(line.indexOf(':')+1,line.indexOf('!'))
+                if(mods.includes(user) && line.includes(command)){
                     const target=line.substring(line.lastIndexOf(command)+command.length).trim();
                     shoutout(target);
                 }
