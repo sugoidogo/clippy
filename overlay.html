@@ -116,7 +116,7 @@
         login=params.get('login');
         client_id=params.get('client_id');
         commands=params.get('commands').split(',');
-        delay=params.get('delay');
+        delay=params.get('delay')*1000;
         commands.pop();
         console.log('! commands ('+commands.length+'): '+commands);
         const ircwsurl=params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
