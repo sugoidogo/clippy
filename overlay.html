@@ -7,7 +7,7 @@
     }
 </style>
 <script>
-    let pass, login, commands, irc, mods, client_id, intervalID;
+    let pass, login, commands, irc, mods, client_id, intervalID, delay;
     const iframe=document.getElementsByTagName('iframe')[0]
 
     function send(message){
@@ -59,7 +59,7 @@
         const URL=json['data'][index]['embed_url']+'&autoplay=true&parent='+window.location.hostname;
         const duration=json['data'][index]['duration']*1000;
         iframe.src=URL
-        setTimeout(clearFrame,duration);
+        setTimeout(clearFrame,duration+delay);
     }
 
     function onopen(event){
@@ -116,6 +116,7 @@
         login=params.get('login');
         client_id=params.get('client_id');
         commands=params.get('commands').split(',');
+        delay=params.get('delay');
         commands.pop();
         console.log('! commands ('+commands.length+'): '+commands);
         const ircwsurl=params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
