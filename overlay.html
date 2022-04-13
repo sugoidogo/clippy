@@ -7,7 +7,7 @@
     }
 </style>
 <script>
-    let pass, login, commands, irc, mods, client_id;
+    let pass, login, commands, irc, mods, client_id, intervalID;
     const iframe=document.getElementsByTagName('iframe')[0]
 
     function send(message){
@@ -67,7 +67,7 @@
         send('NICK '+login)
         send('JOIN #'+login)
         send('CAP REQ :twitch.tv/commands')
-        setInterval(getMods,1000)
+        intervalID=setInterval(getMods,1000)
     }
 
     function onmessage(event){
@@ -97,6 +97,7 @@
     }
 
     function onerror(event){
+        clearInterval(intervalID);
         try{
             init();
             return;
