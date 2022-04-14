@@ -66,7 +66,7 @@
         const max=json['data'].length;
         console.log(json);
         const index=Math.floor(Math.random() * max);
-        const URL=json['data'][index]['embed_url']+'&autoplay=true&parent='+window.location.hostname;
+        const URL=json['data'][index]['embed_url']+'&autoplay=true&muted=false&parent='+window.location.hostname;
         const duration=json['data'][index]['duration']*1000;
         iframe.src=URL
         timeoutID=setTimeout(clearFrame,duration+delay);
