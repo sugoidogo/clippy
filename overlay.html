@@ -20,7 +20,7 @@
         video.hidden=false;
     }
 
-    function onend(){
+    function onended(){
         video.hidden=true;
         video.src=queue.shift();
     }
@@ -141,7 +141,7 @@
         irc.onerror=onerror;
         irc.onclose=onerror;
         video.onplay=onplay;
-        video.onended=onend;
+        video.onended=onended;
     }
 
     try{
