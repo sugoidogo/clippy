@@ -6,8 +6,6 @@
     then paste into your browser source url.</p>
     <p id="login" style="display: none;"></p>
     <p id="pass" style="display: none;"></p>
-    <label for="delay">hide delay (to compensate for loading delay)</label>
-    <input id="delay" type="number" min="0" step="1" value="2"></body>
     <br/>
     <button onclick="copyURL()">Copy Overlay URL</button>
     <input id='newCommand' type="text"/><button onclick="addCommand()">Add Command</button>
@@ -25,7 +23,6 @@
     const commands=document.getElementById('commands');
     const login=document.getElementById('login');
     const pass=document.getElementById('pass');
-    const delay=document.getElementById('delay');
 
     async function getPass() {
         try {
@@ -78,7 +75,6 @@
             +'?client_id='+client_id
             +'&login='+login.value
             +'&pass='+pass.value
-            +'&delay='+delay.value
             +'&commands='
         ;
         for (const button of document.getElementsByClassName('command')){

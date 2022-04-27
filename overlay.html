@@ -11,7 +11,7 @@
     }
 </style>
 <script>
-    let pass, login, commands, irc, mods, client_id, intervalID, timeoutID, delay;
+    let pass, login, commands, irc, mods, client_id, intervalID;
     let queue=[]
     const regex=/-preview-.*/g
     const video=document.getElementsByTagName('video')[0]
@@ -132,7 +132,6 @@
         login=params.get('login');
         client_id=params.get('client_id');
         commands=params.get('commands').split(',');
-        delay=parseInt(params.get('delay'))*1000;
         commands.pop();
         console.log('! commands ('+commands.length+'): '+commands);
         const ircwsurl=params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
