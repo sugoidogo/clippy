@@ -11,7 +11,7 @@
     }
 </style>
 <script>
-    let pass, login, commands, samegame, first, dur, cut, rand, views, noreplay;
+    let pass, login, commands, samegame, first, dur, cut, views, noreplay;
     let irc, gid, mods, client_id, intervalID;
     let queue=[];
     let history=[];
@@ -233,7 +233,6 @@
         first=parseInt(params.get('first')) || null;
         dur=parseFloat(params.get('dur')) || null;
         cut=parseFloat(params.get('cut')) || null;
-        rand=params.get('rand')==='true' || false;
         views=params.get('views')==='true' || false;
         noreplay=params.get('noreplay')==='true' || false;
         const ircwsurl=params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
