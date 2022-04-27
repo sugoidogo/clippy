@@ -12,7 +12,7 @@
 </style>
 <script>
     let pass, login, commands, samegame, first, dur, cut, views, noreplay;
-    let irc, gid, mods, client_id, intervalID;
+    let irc, gid, mods, client_id, intervalID, tid;
     let queue=[];
     let history=[];
     const regex=/-preview-.*/g;
@@ -29,13 +29,16 @@
     function onplay(){
         video.hidden=false;
         if(cut){
-            setTimeout(onended,cut*1000);
+            tid=setTimeout(onended,cut*1000);
         }
         history.push(video.src);
     }
 
     function onended(){
         video.hidden=true;
+        if(tid){
+            tid=clearTimeout(tid);
+        }
         video.src=queue.shift();
     }
 
