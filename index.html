@@ -20,7 +20,7 @@
 <script>
     const client_id='72wtxvzs6erokrj33lk105whmoo381';
     const newCommandHTML='<li><button class="command" onclick="removeCommand(this)">!command</button></li>';
-    const overlayURLBase='https://sugoidogo.github.io/clippy/overlay';
+    const overlayURLBase=window.location.href.split('#')[0]+'overlay.html';
     const newCommand=document.getElementById('newCommand');
     const commands=document.getElementById('commands');
     const login=document.getElementById('login');
@@ -39,9 +39,8 @@
                 'https://id.twitch.tv/oauth2/authorize'
                 + '?response_type=token'
                 + '&client_id='+client_id
-                + '&redirect_uri=https://sugoidogo.github.io/clippy'
                 + '&scope=chat:read chat:edit'
-            )
+            )+'&redirect_uri='+window.location.href.split('?')[0];
             throw e;
         }
     }
