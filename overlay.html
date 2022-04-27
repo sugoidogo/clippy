@@ -11,13 +11,27 @@
     }
 </style>
 <script>
-    let pass, login, commands, irc, mods, client_id, intervalID;
-    let queue=[]
-    const regex=/-preview-.*/g
-    const video=document.getElementsByTagName('video')[0]
+    let pass, login, commands, samegame, first, dur, cut, rand, views, noreplay;
+    let irc, gid, mods, client_id, intervalID;
+    let queue=[];
+    let history=[];
+    const regex=/-preview-.*/g;
+    const video=document.getElementsByTagName('video')[0];
+
+    function getURL(clip){
+        return clip['thumbnail_url'].replace(regex,'.mp4')
+    }
+
+    function fHistory(clip){
+        return !history.includes(getURL(clip));
+    }
 
     function onplay(){
         video.hidden=false;
+        if(cut){
+            setTimeout(onended,cut*1000);
+        }
+        history.push(video.src);
     }
 
     function onended(){
@@ -53,27 +67,109 @@
         return json['data'][0]['id']
     }
 
+    async function getGame(target){
+        const bid=await getBroadcasterId(target);
+        const url=new URL('https://api.twitch.tv/helix/channels');
+        url.search=new URLSearchParams({
+            broadcaster_id:bid
+        });
+        const response=fetch(url,{
+            headers:headers
+        });
+        const json=await response.json();
+        return json['data'][0]['game_id'];
+    }
+
+    function sameGame(clip){
+        return clip['game_id']==gid;
+    }
+
+    function fDur(clip){
+        return clip['duration']<=dur;
+    }
+
+    function shortest(clips){
+        let time=61;
+        for (clip of clips){
+            if(clip['duration']<time){
+                time=clip['duration'];
+            }
+        }
+        let trudur=dur;
+        dur=time;
+        clips=clips.filter(fDur);
+        dur=trudur;
+        return clips;
+    }
+
+    function fViews(clip){
+        return clip['view_count']==views;
+    }
+
+    function mostViews(clips){
+        views=-1;
+        for (clip of clips){
+            if(clip['view_count']>views){
+                views=clip['view_count'];
+            }
+        }
+        clips=clips.filter(fViews);
+        views=true;
+        return clips;
+    }
+
     async function shoutout(target){
         if(target[0]=='@'){
             target=target.substring(1);
         }
         console.log("! shoutout:"+target);
         target=await getBroadcasterId(target);
-        const response=await fetch('https://api.twitch.tv/helix/clips'
-            +'?broadcaster_id='+target
-            ,{
-                headers:getAuthHeaders()
+        const url=new URL('https://api.twitch.tv/helix/clips');
+        const search=new URLSearchParams({
+            broadcaster_id:target
+        });
+        if(first){
+            search.append('first',first);
+        }
+        url.search=search;
+        const response=await fetch(url,{
+            headers:getAuthHeaders()
+        });
+        let json=await response.json();
+        json=json['data'];
+        if(noreplay){
+            let filtered=json.filter(fHistory);
+            if(filtered.length!=0){
+                json=filtered;
+            }else{
+                history=[];
             }
-        )
-        const json=await response.json();
-        const max=json['data'].length;
-        console.log(json);
-        const index=Math.floor(Math.random() * max);
-        const url=json['data'][index]['thumbnail_url'].replace(regex,'.mp4');
+        }
+        if(samegame){
+            let filtered=json.filter(sameGame);
+            if(filtered.length!=0){
+                json=filtered;
+            }
+        }
+        if(dur){
+            let filtered=json.filter(fDur);
+            if(filtered.length!=0){
+                json=filtered;
+            }else{
+                json=shortest(json);
+            }
+        }
+        if(views){
+            json=mostViews(json);
+        }
+        
+        let index=Math.floor(Math.random()*json.length);
+        json=json[index];
+        let src=getURL(json);
         if(video.paused){
-            video.src=url;
+            video.src=src;
         } else {
-            queue.push(url);
+            queue.push(src);
         }
     }
 
@@ -133,7 +229,13 @@
         client_id=params.get('client_id');
         commands=params.get('commands').split(',');
         commands.pop();
-        console.log('! commands ('+commands.length+'): '+commands);
+        samegame=params.get('samegame')==='true' || false;
+        first=parseInt(params.get('first')) || null;
+        dur=parseFloat(params.get('dur')) || null;
+        cut=parseFloat(params.get('cut')) || null;
+        rand=params.get('rand')==='true' || false;
+        views=params.get('views')==='true' || false;
+        noreplay=params.get('noreplay')==='true' || false;
         const ircwsurl=params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
         irc=new WebSocket(ircwsurl);
         irc.onopen=onopen;
