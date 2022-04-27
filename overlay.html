@@ -1,4 +1,7 @@
-<iframe></iframe>
+<!DOCTYPE html>
+<body>
+    <video autoplay hidden></video>
+</body>
 <style>
     * {
         width: 100%;
@@ -10,7 +13,17 @@
 <script>
     let pass, login, commands, irc, mods, client_id, intervalID, timeoutID, delay;
     let queue=[]
-    const iframe=document.getElementsByTagName('iframe')[0]
+    const regex=/-preview-.*/g
+    const video=document.getElementsByTagName('video')[0]
+
+    function onplay(){
+        video.hidden=false;
+    }
+
+    function onend(){
+        video.hidden=true;
+        video.src=queue.shift();
+    }
 
     function send(message){
         console.log('< '+message);
@@ -19,14 +32,6 @@
 
     function getMods(){
         send('PRIVMSG #'+login+' :/mods')
-    }
-
-    function clearFrame(){
-        iframe.src='';
-        timeoutID=null;
-        if(queue.length){
-            shoutout(queue.shift());
-        }
     }
 
     function getAuthHeaders(){
@@ -49,10 +54,6 @@
     }
 
     async function shoutout(target){
-        if(timeoutID){
-            queue.push(target)
-            return;
-        }
         if(target[0]=='@'){
             target=target.substring(1);
         }
@@ -60,7 +61,6 @@
         target=await getBroadcasterId(target);
         const response=await fetch('https://api.twitch.tv/helix/clips'
             +'?broadcaster_id='+target
-            +'&first=100'
             ,{
                 headers:getAuthHeaders()
             }
@@ -69,10 +69,12 @@
         const max=json['data'].length;
         console.log(json);
         const index=Math.floor(Math.random() * max);
-        const URL=json['data'][index]['embed_url']+'&autoplay=true&muted=false&parent='+window.location.hostname;
-        const duration=json['data'][index]['duration']*1000;
-        iframe.src=URL
-        timeoutID=setTimeout(clearFrame,duration+delay);
+        const url=json['data'][index]['thumbnail_url'].replace(regex,'.mp4');
+        if(video.paused){
+            video.src=url;
+        } else {
+            queue.push(url);
+        }
     }
 
     function onopen(event){
@@ -139,6 +141,8 @@
         irc.onmessage=onmessage;
         irc.onerror=onerror;
         irc.onclose=onerror;
+        video.onplay=onplay;
+        video.onended=onend;
     }
 
     try{
