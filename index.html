@@ -39,7 +39,14 @@
     <button onclick="copyURL()">Copy Overlay URL</button>
     </div>
     <div id="commands">
-        <input id='newCommand' type="text"/><button onclick="addCommand()">Add Command</button>
+        <label for="header">Target Prefix:</label>
+        <input type="text" id="header" value="Check out">
+        <br>
+        <label for="css">Custom CSS URI:</label>
+        <input type="text" id="css" value="inline.css">
+        <br>
+        <input id='newCommand' type="text">
+        <button onclick="addCommand()">Add Command</button>
         <p>Click on a command to remove it</p>
         <ul>
             <li><button class="command" onclick="removeCommand(this)">!so</button></li>
@@ -73,6 +80,7 @@
     const noreplay=document.getElementById('noreplay');
     const autoplay=document.getElementById('autoplay');
     const lastgame=document.getElementById('lastgame');
+    const header=document.getElementById('header');
 
     function enabled(element,state){
         document.getElementById(element).disabled=!state;
@@ -159,6 +167,12 @@
         }
         if(lastgame.checked){
             search.append('lastgame','true');
+        }
+        if(css.value){
+            search.append('css',css.value);
+        }
+        if(header.value){
+            search.append('header',header.value);
         }
         url.search=search;
         navigator.clipboard.writeText(url);
