@@ -10,9 +10,11 @@ Some settings are best-effort filters, which will adjust themselves if no clips 
 Strict filters don't self-adjust and will simply disable if no clips match.
 | Name | Type | Description |
 |   -  |    -   |   -   |
+| Auto-play clips from my channel | Strict | Instead of waiting for chat commands, loop clips from the broadcaster's channel |
 | Search the last # clips | Strict | The number of clips to filter through |
-| Avoid clips already played this session | Strict | Remember what clips have played and avoid re-playing them. History is reset if all clips have been played. |
-| Try to find clips in my category | Strict | Filters clips by whatever category you are currently streaming. |
+| Don't use clips already played this session | Strict | Remember what clips have played and avoid re-playing them. History is reset if all clips have been played. |
+| Find clips in my category | Strict | Filters clips by whatever category you are currently streaming. |
+| Find clips in the target's category | strict | Filter clips by whatever category the target's channel has set |
 | Max clip duration | best-effort | Clips longer than this will be filtered out. If no clips are left, the filter is re-applied using the duration of the shortest clip availible. |
 | Most Viewed | best-effort | This filter always uses the best-effort fallback to filter clips by the view count of the highest viewed clip |
 | Clip cutoff | Strict | This starts a timer when the clip starts playing that will end playback, cutting off the clip if it's too long.
