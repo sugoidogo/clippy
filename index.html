@@ -8,16 +8,22 @@
     <p id="pass" hidden></p>
     <div id="flex">
     <div id="settings">
-    <input id="firstOn" type="checkbox" onclick="enabled('first',this.checked)">
+    <input id="autoplay" type="checkbox">
+    <label for="autoplay">Auto-play clips from my channel</label>
+    <br>
+    <input id="firstOn" type="checkbox" onchange="enabled('first',this.checked)">
     <label for="firstOn">Search the last </label>
     <input id="first" type="number" min="1" max="100" step="1" value="20" disabled>
     <label for="first"> clips</label>
     <br>
     <input id="noreplay" type="checkbox" checked>
-    <label for="noreplay">Avoid clips already played this session</label>
+    <label for="noreplay">Don't use clips already played this session</label>
     <br>
     <input id="samegame" type="checkbox">
-    <label for="samegame">Try to find clips in my category</label>
+    <label for="samegame">Find clips in my category</label>
+    <br>
+    <input id="lastgame" type="checkbox">
+    <label for="lastgame">Find clips in the target's category</label>
     <br>
     <input id="durOn" type="checkbox" onclick="enabled('dur',this.checked)">
     <label for="durOn">Max clip duration in seconds: </label>
@@ -65,6 +71,8 @@
     const views=document.getElementById('views');
     const cut=document.getElementById('cut');
     const noreplay=document.getElementById('noreplay');
+    const autoplay=document.getElementById('autoplay');
+    const lastgame=document.getElementById('lastgame');
 
     function enabled(element,state){
         document.getElementById(element).disabled=!state;
@@ -145,6 +153,12 @@
         }
         if(noreplay.checked){
             search.append('noreplay','true');
+        }
+        if(autoplay.checked){
+            search.append('autoplay','true');
+        }
+        if(lastgame.checked){
+            search.append('lastgame','true');
         }
         url.search=search;
         navigator.clipboard.writeText(url);

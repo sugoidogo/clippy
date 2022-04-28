@@ -11,10 +11,11 @@
     }
 </style>
 <script>
-    let pass, login, commands, samegame, first, dur, cut, views, noreplay;
-    let irc, gid, mods, client_id, intervalID, tid;
+    let pass, login, commands, samegame, first, dur, cut, views, noreplay, autoplay, lastgame;
+    let irc, gid, client_id, intervalID, tid;
     let queue=[];
     let history=[];
+    let mods=[];
     const regex=/-preview-.*/g;
     const video=document.getElementsByTagName('video')[0];
 
@@ -31,7 +32,11 @@
         if(cut){
             tid=setTimeout(onended,cut*1000);
         }
-        history.push(video.src);
+        if(autoplay){
+            queue.push(video.src);
+        }else{
+            history.push(video.src);
+        }
     }
 
     function onended(){
@@ -135,7 +140,7 @@
             search.append('first',first);
         }
         url.search=search;
-        const response=await fetch(url,{
+        let response=await fetch(url,{
             headers:getAuthHeaders()
         });
         let json=await response.json();
@@ -149,6 +154,14 @@
             }
         }
         if(samegame){
+            gid=getGame(login);
+            let filtered=json.filter(sameGame);
+            if(filtered.length!=0){
+                json=filtered;
+            }
+        }
+        if(lastgame){
+            gid=getGame(target);
             let filtered=json.filter(sameGame);
             if(filtered.length!=0){
                 json=filtered;
@@ -165,14 +178,17 @@
         if(views){
             json=mostViews(json);
         }
-        
-        let index=Math.floor(Math.random()*json.length);
-        json=json[index];
-        let src=getURL(json);
+        if(!autoplay){
+            let index=Math.floor(Math.random()*json.length);
+            json=[json[index]];
+        }
+
         if(video.paused){
-            video.src=src;
-        } else {
-            queue.push(src);
+            video.src=getURL(json.shift());
+        }
+        for (clip of json){
+            clip=getURL(clip);
+            queue.push(clip);
         }
     }
 
@@ -238,6 +254,8 @@
         cut=parseFloat(params.get('cut')) || null;
         views=params.get('views')==='true' || false;
         noreplay=params.get('noreplay')==='true' || false;
+        autoplay=params.get('autoplay')==='true' || false;
+        lastgame=params.get('lastgame')==='true' || false;
         const ircwsurl=params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
         irc=new WebSocket(ircwsurl);
         irc.onopen=onopen;
@@ -246,6 +264,9 @@
         irc.onclose=onerror;
         video.onplay=onplay;
         video.onended=onended;
+        if(autoplay){
+            shoutout(login);
+        }
     }
 
     try{
