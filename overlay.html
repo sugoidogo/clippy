@@ -53,7 +53,7 @@
 </style>
 <link rel="stylesheet">
 <script>
-    let pass, login, commands, samegame, first, dur, cut, views, noreplay, autoplay, lastgame;
+    let pass, login, bid, commands, samegame, first, dur, cut, views, noreplay, autoplay, lastgame;
     let irc, gid, client_id, intervalID, tid;
     let queue = [];
     let history = [];
@@ -95,6 +95,9 @@
     }
 
     function load(clip){
+        if(!clip){
+            return;
+        }
         if(!autoplay){
             img.src=clip.img;
             name.innerHTML=clip.name;
@@ -118,10 +121,6 @@
         }
     }
 
-    async function getBroadcasterId(target) {
-        return (await getBroadcasterInfo(target))['id'];
-    }
-
     async function getBroadcasterInfo(target) {
         target = target.toLowerCase();
         const response = await fetch('https://api.twitch.tv/helix/users'
@@ -134,20 +133,21 @@
         return json['data'][0];
     }
 
-    async function getGame(target) {
-        const bid = await getBroadcasterId(target);
+    async function getGame(bid) {
         const url = new URL('https://api.twitch.tv/helix/channels');
         url.search = new URLSearchParams({
             broadcaster_id: bid
         });
-        const response = fetch(url, {
-            headers: headers
+        const response = await fetch(url, {
+            headers: getAuthHeaders()
         });
         const json = await response.json();
+        console.log(json['data'][0]['game_id']);
         return json['data'][0]['game_id'];
     }
 
     function sameGame(clip) {
+        console.log('clip gid '+clip['game_id']);
         return clip['game_id'] == gid;
     }
 
@@ -190,10 +190,10 @@
             target = target.substring(1);
         }
         console.log("! shoutout:" + target);
-        target = await getBroadcasterId(target);
+        target = await getBroadcasterInfo(target);
         const url = new URL('https://api.twitch.tv/helix/clips');
         const search = new URLSearchParams({
-            broadcaster_id: target
+            broadcaster_id: target['id']
         });
         if (first) {
             search.append('first', first);
@@ -213,14 +213,14 @@
             }
         }
         if (samegame) {
-            gid = getGame(login);
+            gid = await getGame(bid);
             let filtered = json.filter(sameGame);
             if (filtered.length != 0) {
                 json = filtered;
             }
         }
         if (lastgame) {
-            gid = getGame(target);
+            gid = await getGame(target['id']);
             let filtered = json.filter(sameGame);
             if (filtered.length != 0) {
                 json = filtered;
@@ -312,6 +312,7 @@
         pass = params.get('pass');
         login = params.get('login');
         client_id = params.get('client_id');
+        getBroadcasterInfo(login).then((info)=>bid=info['id']);
         commands = params.get('commands').split(',');
         commands.pop();
         samegame = params.get('samegame') === 'true' || false;
