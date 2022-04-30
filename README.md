@@ -16,7 +16,7 @@ Most settings are best-effort filters, which will adjust or skip themselves if n
 | Find clips in the target's category | Filter clips by whatever category the target's channel has set |
 | Max clip duration  | Clips longer than this will be filtered out. If no clips are left, the filter is re-applied using the duration of the shortest clip availible. |
 | Most Viewed  | This filter always uses the best-effort fallback to filter clips by the view count of the highest viewed clip |
-| Clip cutoff | This starts a timer when the clip starts playing that will end playback, cutting off the clip if it's too long.
+| Clip cutoff | This starts a timer when the clip starts playing that will end playback, cutting off the clip if it's too long. Make sure to use max clip duration with this setting to avoid having to cut clips. |
 ## Customization
 The options in the right-side panel are for customizing the overlay to your channel.
 | Name | Description |
