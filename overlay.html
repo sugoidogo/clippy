@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<body hidden>
+<body>
     <div id="header">
         <img>
         <div>
@@ -16,6 +16,7 @@
         height: 100vh;
         margin: 0px;
         border: none;
+        opacity: 0;
     }
 
     div {
@@ -35,13 +36,13 @@
         font-size: 10vh;
         margin-top: 0px;
         margin-bottom: 0px;
-        margin-right: 3vh;
         text-shadow: 
             1px 1px 5px black,
             -1px 1px 5px black,
             1px -1px 5px black,
             -1px -1px 5px black
         ;
+        white-space: nowrap;
     }
 
     video {
@@ -64,7 +65,8 @@
     const img=document.getElementsByTagName('img')[0];
     const name=document.getElementById('name');
     const css=document.getElementsByTagName('link')[0];
-    const header=document.getElementById('prefix');
+    const prefix=document.getElementById('prefix');
+    const header=document.getElementById('header');
 
     function getURL(clip) {
         return clip['thumbnail_url'].replace(regex, '.mp4')
@@ -75,7 +77,7 @@
     }
 
     function onplay() {
-        body.hidden = false;
+        body.style.opacity=100;
         if (cut) {
             tid = setTimeout(onended, cut * 1000);
         }
@@ -87,11 +89,23 @@
     }
 
     function onended() {
-        body.hidden = true;
+        body.style.opacity=0;
         if (tid) {
             tid = clearTimeout(tid);
         }
         load(queue.shift());
+    }
+
+    function setTextSize(size){
+            console.log(size);
+            let marginSize=(size/5)+'px';
+            size=size+'px';
+            name.style.fontSize=size;
+            prefix.style.fontSize=size;
+            name.style.marginLeft=marginSize;
+            name.style.marginRight=marginSize;
+            prefix.style.marginLeft=marginSize;
+            prefix.style.marginRight=marginSize;
     }
 
     function load(clip){
@@ -99,10 +113,18 @@
         if(!clip){
             return;
         }
-        if(!autoplay){
-            img.src=clip.img;
-            name.innerHTML=clip.name;
+        img.src=clip.img;
+        name.innerHTML=clip.name;
+        //*
+        const textMaxWidth=body.clientWidth*0.84;
+        const textMaxSize=img.clientHeight;
+        while(name.scrollWidth+prefix.scrollWidth<textMaxWidth && parseFloat(name.style.fontSize)<textMaxSize){
+            setTextSize(parseFloat(name.style.fontSize)+0.1);
         }
+        while(name.scrollWidth+prefix.scrollWidth>textMaxWidth){
+            setTextSize(parseFloat(name.style.fontSize)-0.1);
+        }
+        //*/
         video.src=clip.src;
     }
 
@@ -325,7 +347,7 @@
         autoplay = params.get('autoplay') === 'true' || false;
         lastgame = params.get('lastgame') === 'true' || false;
         css.href=params.get('css') || '';
-        header.innerHTML=params.get('header') || '';
+        prefix.innerHTML=params.get('header') || '';
         const ircwsurl = params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
         irc = new WebSocket(ircwsurl);
         irc.onopen = onopen;
@@ -334,6 +356,7 @@
         irc.onclose = onerror;
         video.onplay = onplay;
         video.onended = onended;
+        setTextSize(parseFloat(window.getComputedStyle(prefix).getPropertyValue('font-size')));
         if (autoplay) {
             shoutout(login);
         }
