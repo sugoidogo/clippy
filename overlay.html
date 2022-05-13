@@ -81,11 +81,7 @@
         if (cut) {
             tid = setTimeout(onended, cut * 1000);
         }
-        if (autoplay) {
-            queue.push(video.src);
-        } else {
-            history.push(video.src);
-        }
+        history.push(video.src);
     }
 
     function onended() {
@@ -93,7 +89,11 @@
         if (tid) {
             tid = clearTimeout(tid);
         }
-        load(queue.shift());
+        if(queue.length==0 && autoplay){
+            shoutout(login)
+        }else{
+            load(queue.shift());
+        }
     }
 
     function setTextSize(size){
@@ -337,7 +337,6 @@
         client_id = params.get('client_id');
         getBroadcasterInfo(login).then((info)=>bid=info['id']);
         commands = params.get('commands').split(',');
-        commands.pop();
         samegame = params.get('samegame') === 'true' || false;
         first = parseInt(params.get('first')) || null;
         dur = parseFloat(params.get('dur')) || null;
