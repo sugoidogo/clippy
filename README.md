@@ -1,3 +1,5 @@
+# Repo Archived
+Consider using https://streamgood.gg/ instead
 # Clippy
 Play Twitch Clips on demand
 ## Usage
