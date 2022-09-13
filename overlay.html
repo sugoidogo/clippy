@@ -330,9 +330,22 @@
         }
     }
 
+    function verifyPass(pass){
+        fetch('https://id.twitch.tv/oauth2/validate',{
+            headers:{'Authorization': 'Bearer ' + pass}
+        })
+        .then(function(response){
+            if(response.status==401){
+                window.location.href=window.location.origin+'/clippy?search='+encodeURIComponent(window.location.search)
+            }
+        })
+
+    }
+
     function init() {
         const params = new URLSearchParams(document.location.search);
         pass = params.get('pass');
+        verifyPass(pass)
         login = params.get('login');
         client_id = params.get('client_id');
         getBroadcasterInfo(login).then((info)=>bid=info['id']);

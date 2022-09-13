@@ -66,17 +66,27 @@
 <script>
     const client_id='72wtxvzs6erokrj33lk105whmoo381';
     const newCommandHTML='<li><button class="command" onclick="removeCommand(this)">!command</button></li>';
-    const overlayURLBase=window.location.href.split('#')[0]+'overlay.html';
+    const overlayURLBase=window.location.origin+window.location.pathname+'overlay.html';
 
     function enabled(element,state){
         document.getElementById(element).disabled=!state;
     }
 
     async function getPass() {
+        if(window.location.search){
+            localStorage.setItem('search',window.location.search)
+        }
         try {
             const pass = new URLSearchParams(document.location.hash.replace('#', '?')).get('access_token')
             if (!pass) {
                 throw 'missing access token'
+            }
+            const search=localStorage.getItem('search')
+            if(search){
+                localStorage.removeItem('search')
+                const params=new URLSearchParams(decodeURIComponent(search))
+                params.set('pass',pass)
+                window.location.href=overlayURLBase+'?'+params.toString()
             }
             return pass;
         } catch (e) {
