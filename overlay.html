@@ -54,7 +54,7 @@
 </style>
 <link rel="stylesheet">
 <script>
-    let pass, login, bid, commands, samegame, first, dur, cut, views, noreplay, autoplay, lastgame;
+    let pass, login, bid, commands, samegame, first, dur, cut, views, noreplay, autoplay, lastgame, autoso;
     let irc, gid, client_id, intervalID, tid;
     let queue = [];
     let history = [];
@@ -285,7 +285,7 @@
         send('PASS oauth:' + pass)
         send('NICK ' + login)
         send('JOIN #' + login)
-        send('CAP REQ :twitch.tv/commands')
+        send('CAP REQ :twitch.tv/commands twitch.tv/tags')
         intervalID = setInterval(getMods, 1000)
     }
 
@@ -304,6 +304,15 @@
                 mods.unshift(login);
                 console.log('! mods list updated (' + mods.length + '):' + mods);
                 continue;
+            }
+
+            if (line.includes('msg-param-login')){
+                const start=line.indexOf('msg-param-login=')+'msg-param-login='.length
+                let target=line.slice(start)
+                target=target.split(';')[0]
+                console.log('! raid: '+target)
+                send('PRIVMSG #' + login + ' :!so '+target)
+                shoutout(target)
             }
 
             for (const command of commands) {
@@ -358,6 +367,7 @@
         noreplay = params.get('noreplay') === 'true' || false;
         autoplay = params.get('autoplay') === 'true' || false;
         lastgame = params.get('lastgame') === 'true' || false;
+        autoso = params.get('autoso') === 'true' || false;
         css.href=params.get('css') || '';
         prefix.innerHTML=params.get('header') || '';
         const ircwsurl = params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
