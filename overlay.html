@@ -313,6 +313,7 @@
                 console.log('! raid: '+target)
                 send('PRIVMSG #' + login + ' :!so '+target)
                 shoutout(target)
+                continue;
             }
 
             for (const command of commands) {
