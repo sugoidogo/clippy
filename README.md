@@ -10,6 +10,7 @@ Most settings are best-effort filters, which will adjust or skip themselves if n
 | Name | Description |
 |   -  |   -   |
 | Auto-play clips from my channel | Instead of waiting for chat commands, loop clips from the broadcaster's channel |
+| Automatically send the first clippy command when getting raided | Play a clip and shoutout any channel that raids you automatically |
 | Search the last # clips | The number of clips to filter through |
 | Don't use clips already played this session | Remember what clips have played and avoid re-playing them. History is reset if all clips have been played. |
 | Find clips in my category | Filters clips by whatever category you are currently streaming. |
