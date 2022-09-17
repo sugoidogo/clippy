@@ -306,7 +306,7 @@
                 continue;
             }
 
-            if (line.includes('msg-param-login=')){
+            if (autoso && line.includes('msg-param-login=')){
                 const start=line.indexOf('msg-param-login=')+'msg-param-login='.length
                 let target=line.slice(start)
                 target=target.split(';')[0]
