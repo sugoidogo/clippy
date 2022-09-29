@@ -216,7 +216,8 @@
         target = await getBroadcasterInfo(target);
         const url = new URL('https://api.twitch.tv/helix/clips');
         const search = new URLSearchParams({
-            broadcaster_id: target['id']
+            broadcaster_id: target['id'],
+            first:first
         });
         if (first) {
             search.append('first', first);
