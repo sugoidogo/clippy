@@ -48,6 +48,9 @@
             <label for="css">Custom CSS URI:</label>
             <input type="text" id="css" value="inline.css">
             <br>
+            <label for="cssfile">Custom CSS File:</label>
+            <input type="file" id="cssfile" oninput="readCSS(this)">
+            <br>
             <input id='newCommand' type="text">
             <button onclick="addCommand()">Add Command</button>
             <p>Click on a command to remove it</p>
@@ -133,6 +136,8 @@
 
     async function copyURL() {
         let settings = {}
+        settings['css']=document.getElementById('css').value
+        settings['customcss']=localStorage.getItem('css')
         settings['client_id'] = client_id;
         settings['login'] = document.getElementById('login').value;
         settings['pass'] = document.getElementById('pass').value;
@@ -156,6 +161,14 @@
         const url = new URL(overlayURLBase);
         url.search = new URLSearchParams(settings)
         navigator.clipboard.writeText(url);
+    }
+
+    async function readCSS(input){
+        const reader = new FileReader();
+            reader.addEventListener("load", function () {
+                localStorage.setItem('css',reader.result.split(' ').filter((string) => string!='').join(' '))
+        }, false);
+        reader.readAsText(input);
     }
 
     init();

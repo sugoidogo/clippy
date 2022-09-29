@@ -391,6 +391,12 @@
         lastgame = params.get('lastgame') === 'true' || false;
         autoso = params.get('autoso') === 'true' || false;
         css.href=params.get('css') || '';
+        if(params.get('customcss')){
+            const style=document.createElement('style')
+            style.innerHTML=params.get('customcss')
+            const body=document.querySelector('body')
+            body.appendChild(style)
+        }
         prefix.innerHTML=params.get('header') || '';
         const ircwsurl = params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
         irc = new WebSocket(ircwsurl);
