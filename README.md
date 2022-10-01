@@ -28,3 +28,6 @@ The options in the right-side panel are for customizing the overlay to your chan
 Clippy comes with some custom CSS files to get you started:
 - `inline.css`: Display the header at the top of the video instead of above it
 - `no-header.css`: Hide the header entirely
+## Support
+- Get support via [Discord](https://discord.gg/zxDnYSvMNw)
+- Give support via [PayPal](https://paypal.me/SugoiDogo)
