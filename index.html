@@ -182,7 +182,7 @@
             reader.addEventListener("load", function () {
                 localStorage.setItem('css',reader.result.split(' ').filter((string) => string!='').join(' '))
         }, false);
-        reader.readAsText(input);
+        reader.readAsText(input.files[0]);
     }
 
     init();
