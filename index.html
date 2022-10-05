@@ -155,9 +155,6 @@
         settings['client_id'] = client_id;
         settings['login'] = document.getElementById('login').value;
         settings['pass'] = document.getElementById('pass').value;
-        settings['shoutoutOn']=shoutoutOn.checked;
-        settings['messageOn']=messageOn.checked;
-        settings['message']=message.value;
         settings['commands'] = []
         for (const button of document.getElementsByClassName('command')) {
             settings['commands'].push(button.innerHTML);
