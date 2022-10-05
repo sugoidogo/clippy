@@ -29,6 +29,7 @@ The options in the right-side panel are for customizing the overlay to your chan
 | Send a message in chat | Send a message as soon as a valid shoutout target is found |
 
 Clippy comes with some custom CSS files to get you started:
+- `twitch.css`: New default, uses [Twitchy TV Font by MaxiGamer](https://www.deviantart.com/maxigamer/art/Twitchy-TV-FONT-594450410)
 - `inline.css`: Display the header at the top of the video instead of above it
 - `no-header.css`: Hide the header entirely
 ## Support
