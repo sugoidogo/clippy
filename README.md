@@ -33,5 +33,5 @@ Clippy comes with some custom CSS files to get you started:
 - `inline.css`: Display the header at the top of the video instead of above it
 - `no-header.css`: Hide the header entirely
 ## Support
-- Get support via [Discord](https://discord.gg/zxDnYSvMNw)
+- Get support via [Discord](https://discord.gg/PbGT9tVWTC)
 - Give support via [PayPal](https://paypal.me/SugoiDogo)
