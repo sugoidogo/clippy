@@ -42,8 +42,8 @@
             <button onclick="copyURL()">Copy Overlay URL</button>
         </div>
         <div id="commands">
-            <label for="header">Target Prefix:</label>
-            <input type="text" id="header" value="Check out">
+            <label for="header">Header:</label>
+            <input type="text" id="header" value="Check out $target">
             <br>
             <label for="css">Custom CSS URI:</label>
             <input type="text" id="css" value="inline.css">
@@ -51,6 +51,13 @@
             <label for="cssfile">Custom CSS File:</label>
             <input type="file" id="cssfile" oninput="readCSS(this)">
             <br>
+            <input type="checkbox" id="shoutoutOn">
+            <label for="shoutoutOn">Send /shoutout command</label>
+            <br>
+            <input type="checkbox" id="messageOn">
+            <label for="messageOn">Send a message in chat:</label>
+            <textarea id="message">Check out $target at https://twitch.tv/$target</textarea>
+            <br><br>
             <input id='newCommand' type="text">
             <button onclick="addCommand()">Add Command</button>
             <p>Click on a command to remove it</p>
@@ -67,6 +74,13 @@
     }
     #flex {
         display:flex;
+    }
+    textarea {
+        width: 360px;
+        height: 50px;
+    }
+    * {
+        vertical-align: top;
     }
 </style>
 <script>
@@ -141,6 +155,9 @@
         settings['client_id'] = client_id;
         settings['login'] = document.getElementById('login').value;
         settings['pass'] = document.getElementById('pass').value;
+        settings['shoutoutOn']=shoutoutOn.checked;
+        settings['messageOn']=messageOn.checked;
+        settings['message']=message.value;
         settings['commands'] = []
         for (const button of document.getElementsByClassName('command')) {
             settings['commands'].push(button.innerHTML);

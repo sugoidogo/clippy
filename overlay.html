@@ -1,16 +1,15 @@
 <!DOCTYPE html>
+
 <body>
     <div id="header">
         <img>
         <div>
-            <h1 id="prefix"></h1>
-            <h1 id="name"></h1>
+            <h1 id="headerText"></h1>
         </div>
     </div>
     <video autoplay></video>
 </body>
 <style>
-
     body {
         width: 100vw;
         height: 100vh;
@@ -31,17 +30,16 @@
     }
 
     h1 {
-        font-family: Inter,Roobert,Helvetica Neue,Helvetica,Arial,sans-serif;
+        font-family: Inter, Roobert, Helvetica Neue, Helvetica, Arial, sans-serif;
         color: blueviolet;
         font-size: 10vh;
         margin-top: 0px;
         margin-bottom: 0px;
-        text-shadow: 
+        text-shadow:
             1px 1px 5px black,
             -1px 1px 5px black,
             1px -1px 5px black,
-            -1px -1px 5px black
-        ;
+            -1px -1px 5px black;
         white-space: nowrap;
     }
 
@@ -50,26 +48,25 @@
         height: 90vh;
         object-fit: contain;
     }
-
 </style>
 <link rel="stylesheet">
 <script>
-    let pass, login, bid, commands, samegame, first, dur, cut, views, noreplay, autoplay, lastgame, autoso;
+    let pass, login, bid, commands, samegame, first, dur, cut, views, noreplay, autoplay, lastgame, autoso, headerTextPre, shoutoutOn, message, messageOn;
     let irc, gid, client_id, intervalID, tid;
     let queue = [];
     let history = [];
     let mods = [];
     const regex = /-preview-.*/g;
     const video = document.getElementsByTagName('video')[0];
-    const body=document.getElementsByTagName('body')[0];
-    const img=document.getElementsByTagName('img')[0];
-    const name=document.getElementById('name');
-    const css=document.getElementsByTagName('link')[0];
-    const prefix=document.getElementById('prefix');
-    const header=document.getElementById('header');
+    const body = document.getElementsByTagName('body')[0];
+    const img = document.getElementsByTagName('img')[0];
+    const name = document.getElementById('name');
+    const css = document.getElementsByTagName('link')[0];
+    const prefix = document.getElementById('prefix');
+    const header = document.getElementById('header');
 
     function getURL(clip) {
-        return clip['thumbnail_url'].replace(regex, '.mp4')
+        return clip['thumbnail_url'].replaceAll(regex, '.mp4')
     }
 
     function fHistory(clip) {
@@ -77,7 +74,7 @@
     }
 
     function onplay() {
-        body.style.opacity=100;
+        body.style.opacity = 100;
         if (cut) {
             tid = setTimeout(onended, cut * 1000);
         }
@@ -85,52 +82,56 @@
     }
 
     function onended() {
-        body.style.opacity=0;
+        body.style.opacity = 0;
         if (tid) {
             tid = clearTimeout(tid);
         }
-        if(queue.length==0 && autoplay){
+        if (queue.length == 0 && autoplay) {
             shoutout(login)
-        }else{
+        } else {
             load(queue.shift());
         }
     }
 
-    function setTextSize(size){
-            console.log(size);
-            let marginSize=(size/5)+'px';
-            size=size+'px';
-            name.style.fontSize=size;
-            prefix.style.fontSize=size;
-            name.style.marginLeft=marginSize;
-            name.style.marginRight=marginSize;
-            prefix.style.marginLeft=marginSize;
-            prefix.style.marginRight=marginSize;
+    function setTextSize(size) {
+        console.log(size);
+        let marginSize = (size / 5) + 'px';
+        size = size + 'px';
+        headerText.style.fontSize = size;
+        headerText.style.marginLeft = marginSize;
+        headerText.style.marginRight = marginSize;
     }
 
-    function load(clip){
-        video.src=null;
-        if(!clip){
+    function load(clip) {
+        video.src = null;
+        if (!clip) {
             return;
         }
-        img.src=clip.img;
-        name.innerHTML=clip.name;
+        img.src = clip.img;
+        headerText.innerHTML = headerTextPre.replaceAll('$target', clip.name);
         //*
-        const textMaxWidth=body.clientWidth*0.84;
-        const textMaxSize=img.clientHeight;
-        while(name.scrollWidth+prefix.scrollWidth<textMaxWidth && parseFloat(name.style.fontSize)<textMaxSize){
-            setTextSize(parseFloat(name.style.fontSize)+0.1);
+        const textMaxWidth = body.clientWidth * 0.84;
+        const textMaxSize = img.clientHeight;
+        while (headerText.scrollWidth < textMaxWidth && parseFloat(headerText.style.fontSize) < textMaxSize) {
+            setTextSize(parseFloat(headerText.style.fontSize) + 0.1);
         }
-        while(name.scrollWidth+prefix.scrollWidth>textMaxWidth){
-            setTextSize(parseFloat(name.style.fontSize)-0.1);
+        while (headerText.scrollWidth > textMaxWidth) {
+            setTextSize(parseFloat(headerText.style.fontSize) - 0.1);
         }
         //*/
-        video.src=clip.src;
+        video.src = clip.src;
+        if (shoutoutOn) {
+            sendMessage('/shoutout ' + clip.name)
+        }
     }
 
     function send(message) {
         console.log('< ' + message);
         irc.send(message);
+    }
+
+    function sendMessage(message) {
+        send('PRIVMSG #' + login + ' :' + message)
     }
 
     function getMods() {
@@ -170,7 +171,7 @@
     }
 
     function sameGame(clip) {
-        console.log('clip gid '+clip['game_id']);
+        console.log('clip gid ' + clip['game_id']);
         return clip['game_id'] == gid;
     }
 
@@ -232,10 +233,13 @@
         }
         console.log("! shoutout:" + target);
         target = await getBroadcasterInfo(target);
+        if (messageOn) {
+            sendMessage(message.replaceAll('$target', target.display_name))
+        }
         const url = new URL('https://api.twitch.tv/helix/clips');
         const search = new URLSearchParams({
             broadcaster_id: target['id'],
-            first:first
+            first: first
         });
         if (first) {
             search.append('first', first);
@@ -286,20 +290,19 @@
             json = [json[index]];
         }
 
-        let clips=[];
-        for (clip of json){
-            let info=await getBroadcasterInfo(clip['broadcaster_name']);
+        let clips = [];
+        for (clip of json) {
             clips.push({
-                img:info['profile_image_url'],
-                name:info['display_name'],
-                src:getURL(clip)
+                img: target['profile_image_url'],
+                name: target['display_name'],
+                src: getURL(clip)
             });
         }
 
         if (video.paused) {
             load(clips.shift())
         }
-        queue=queue.concat(clips);
+        queue = queue.concat(clips);
     }
 
     function onopen(event) {
@@ -327,12 +330,12 @@
                 continue;
             }
 
-            if (autoso && line.includes('msg-param-login=')){
-                const start=line.indexOf('msg-param-login=')+'msg-param-login='.length
-                let target=line.slice(start)
-                target=target.split(';')[0]
-                console.log('! raid: '+target)
-                send('PRIVMSG #' + login + ' :!so '+target)
+            if (autoso && line.includes('msg-param-login=')) {
+                const start = line.indexOf('msg-param-login=') + 'msg-param-login='.length
+                let target = line.slice(start)
+                target = target.split(';')[0]
+                console.log('! raid: ' + target)
+                send('PRIVMSG #' + login + ' :!so ' + target)
                 shoutout(target)
                 continue;
             }
@@ -361,15 +364,15 @@
         }
     }
 
-    function verifyPass(pass){
-        fetch('https://id.twitch.tv/oauth2/validate',{
-            headers:{'Authorization': 'Bearer ' + pass}
+    function verifyPass(pass) {
+        fetch('https://id.twitch.tv/oauth2/validate', {
+            headers: { 'Authorization': 'Bearer ' + pass }
         })
-        .then(function(response){
-            if(response.status==401){
-                window.location.href=window.location.origin+'/clippy?search='+encodeURIComponent(window.location.search)
-            }
-        })
+            .then(function (response) {
+                if (response.status == 401) {
+                    window.location.href = window.location.origin + '/clippy?search=' + encodeURIComponent(window.location.search)
+                }
+            })
 
     }
 
@@ -379,7 +382,7 @@
         verifyPass(pass)
         login = params.get('login');
         client_id = params.get('client_id');
-        getBroadcasterInfo(login).then((info)=>bid=info['id']);
+        getBroadcasterInfo(login).then((info) => bid = info['id']);
         commands = params.get('commands').split(',');
         samegame = params.get('samegame') === 'true' || false;
         first = parseInt(params.get('first')) || null;
@@ -390,14 +393,18 @@
         autoplay = params.get('autoplay') === 'true' || false;
         lastgame = params.get('lastgame') === 'true' || false;
         autoso = params.get('autoso') === 'true' || false;
-        css.href=params.get('css') || '';
-        if(params.get('customcss')){
-            const style=document.createElement('style')
-            style.innerHTML=params.get('customcss')
-            const body=document.querySelector('body')
+        shoutoutOn = params.get('shoutoutOn') === 'true' || false;
+        messageOn = params.get('messageOn') === 'true' || false;
+        message = params.get('message') || 'Check out $target at https://twitch.tv/$target';
+        css.href = params.get('css') || '';
+        if (params.get('customcss')) {
+            const style = document.createElement('style')
+            style.innerHTML = params.get('customcss')
+            const body = document.querySelector('body')
             body.appendChild(style)
         }
-        prefix.innerHTML=params.get('header') || '';
+        headerText.innerHTML = params.get('header') || '';
+        headerTextPre = headerText.innerHTML
         const ircwsurl = params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
         irc = new WebSocket(ircwsurl);
         irc.onopen = onopen;
@@ -406,7 +413,7 @@
         irc.onclose = onerror;
         video.onplay = onplay;
         video.onended = onended;
-        setTextSize(parseFloat(window.getComputedStyle(prefix).getPropertyValue('font-size')));
+        setTextSize(parseFloat(window.getComputedStyle(headerText).getPropertyValue('font-size')));
         if (autoplay) {
             shoutout(login);
         }

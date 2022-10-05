@@ -24,6 +24,9 @@ The options in the right-side panel are for customizing the overlay to your chan
 | - | - |
 | Target Prefix | The text displayed above the name of the streamer, next to their profile image |
 | Custom CSS URI | Use this to apply custom styling to the overlay, like fonts and text size |
+| Custom CSS File | Same as above, but load from file instead of URL |
+| Send /shoutout command | Use Twitch's new [shoutout command](https://help.twitch.tv/s/article/shoutouts) |
+| Send a message in chat | Send a message as soon as a valid shoutout target is found |
 
 Clippy comes with some custom CSS files to get you started:
 - `inline.css`: Display the header at the top of the video instead of above it
