@@ -335,7 +335,7 @@
                 let target = line.slice(start)
                 target = target.split(';')[0]
                 console.log('! raid: ' + target)
-                send('PRIVMSG #' + login + ' :!so ' + target)
+                sendMessage(commands[0]+' '+target)
                 shoutout(target)
                 continue;
             }
