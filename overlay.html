@@ -3,9 +3,7 @@
 <body>
     <div id="header">
         <img>
-        <div>
-            <h1 id="headerText"></h1>
-        </div>
+        <h1 id="headerText"></h1>
     </div>
     <video autoplay></video>
 </body>
@@ -20,6 +18,7 @@
 
     div {
         display: flex;
+        align-items: center;
     }
 
     img {
@@ -118,6 +117,7 @@
         while (headerText.scrollWidth > textMaxWidth) {
             setTextSize(parseFloat(headerText.style.fontSize) - 0.1);
         }
+        header.style.marginTop='-'+img.getBoundingClientRect().top+'px'
         //*/
         video.src = clip.src;
         if (shoutoutOn) {
