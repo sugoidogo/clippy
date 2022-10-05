@@ -403,7 +403,7 @@
             const body = document.querySelector('body')
             body.appendChild(style)
         }
-        headerText.innerHTML = params.get('header') || '';
+        headerText.innerHTML = params.get('header') || 'Check out $target';
         headerTextPre = headerText.innerHTML
         const ircwsurl = params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
         irc = new WebSocket(ircwsurl);
