@@ -117,7 +117,9 @@
         while (headerText.scrollWidth > textMaxWidth) {
             setTextSize(parseFloat(headerText.style.fontSize) - 0.1);
         }
-        header.style.marginTop='-'+img.getBoundingClientRect().top+'px'
+        let padding=parseInt(header.style.marginTop) || 0
+        padding-=img.getBoundingClientRect().top
+        header.style.marginTop=padding+'px'
         //*/
         video.src = clip.src;
         if (shoutoutOn) {
