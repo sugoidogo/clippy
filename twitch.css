@@ -1,0 +1,21 @@
+@import url('inline.css');
+
+@font-face {
+    font-family: twitch;
+    src: url('Twitchy.TV.otf');
+}
+
+#headerText {
+    font-family: twitch;
+    color: white;
+    text-shadow: none;
+    filter: 
+        drop-shadow(-1px -1px 0px blueviolet)
+        drop-shadow(1px -1px 0px blueviolet)
+        drop-shadow(-1px 1px 0px blueviolet)
+        drop-shadow(1px 1px 0px blueviolet)
+        drop-shadow(2px 2px 0px blueviolet)
+        drop-shadow(3px 3px 0px blueviolet)
+    ;
+    transform: translateY(-25%);
+}
