@@ -304,7 +304,14 @@
         if (video.paused) {
             load(clips.shift())
         }
-        queue = queue.concat(clips);
+
+        if(clips.length==0){
+            if (shoutoutOn) {
+            sendMessage('/shoutout ' + clip.name)
+            }
+        } else {
+            queue = queue.concat(clips);
+        }
     }
 
     function onopen(event) {
