@@ -20,5 +20,5 @@
         drop-shadow(0.05em 0.05em 0px blueviolet)
         drop-shadow(0.06em 0.06em 0px blueviolet)
     ;
-    transform: translateY(-25%);
+    margin-top: -1.15em;
 }
