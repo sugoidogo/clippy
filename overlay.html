@@ -238,7 +238,7 @@
         const url = new URL('https://api.twitch.tv/helix/clips');
         const search = new URLSearchParams({
             broadcaster_id: target['id'],
-            first: first
+            first: first || 20
         });
         if (first) {
             search.append('first', first);
@@ -409,8 +409,8 @@
             const body = document.querySelector('body')
             body.appendChild(style)
         }
-        headerText.innerHTML = params.get('header') || 'Check out $target';
-        headerTextPre = headerText.innerHTML
+        headerText.innerHTML = params.get('headerText') || params.get('header')+' $target' || 'Check out $target';
+        headerTextPre = headerText.innerHTML.replace('$target $target','$target')
         const ircwsurl = params.get('ircwsurl') || 'wss://irc-ws.chat.twitch.tv:443'
         irc = new WebSocket(ircwsurl);
         irc.onopen = onopen;
