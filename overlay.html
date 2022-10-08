@@ -245,9 +245,6 @@
             broadcaster_id: target['id'],
             first: first || 20
         });
-        if (first) {
-            search.append('first', first);
-        }
         url.search = search;
         let response = await fetch(url, {
             headers: getAuthHeaders()
