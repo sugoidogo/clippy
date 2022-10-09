@@ -8,11 +8,19 @@
     <p id="pass" hidden></p>
     <div id="flex">
         <div>
+            <input id='newCommand' type="text">
+            <button onclick="addCommand()">Add Command</button>
+            <p>Click on a command to remove it</p>
+            <ul id="commands">
+                <li><button class="command" onclick="removeCommand(this)">!so</button></li>
+                <li><button class="command" onclick="removeCommand(this)">!shoutout</button></li>
+            </ul>
+            <br>
             <input id="autoplay" type="checkbox">
             <label for="autoplay">Auto-play clips from my channel</label>
             <br>
             <input id="autoso" type="checkbox">
-            <label for="autoso">Automatically send the first clippy command (on the right) when getting raided</label>
+            <label for="autoso">Automatically send the first clippy command when getting raided</label>
             <br>
             <input id="firstOn" type="checkbox" onchange="enabled('first',this.checked)">
             <label for="firstOn">Search the last </label>
@@ -28,7 +36,7 @@
             <input id="lastgame" type="checkbox">
             <label for="lastgame">Find clips in the target's category</label>
             <br>
-            <input id="durOn" type="checkbox" onclick="enabled('dur',this.checked)">
+            <input id="durOn" type="checkbox" onchange="enabled('dur',this.checked)">
             <label for="durOn">Max clip duration in seconds: </label>
             <input id="dur" type="number" min="5" max="60" step="0.1" value="60" disabled>
             <br>
@@ -39,17 +47,17 @@
             <label for="cutOn">Clip cutoff in seconds: </label>
             <input id="cut" type="number" min="5" max="60" step="0.1" value="60" disabled>
             <br>
-            <input id='newCommand' type="text">
-            <button onclick="addCommand()">Add Command</button>
-            <p>Click on a command to remove it</p>
-            <ul>
-                <li><button class="command" onclick="removeCommand(this)">!so</button></li>
-                <li><button class="command" onclick="removeCommand(this)">!shoutout</button></li>
-            </ul>
-            <br>
             <button onclick="copyURL()">Copy Overlay URL</button>
         </div>
         <div>
+            <input type="checkbox" id="shoutoutOn">
+            <label for="shoutoutOn">Send /shoutout command</label>
+            <br>
+            <input type="checkbox" id="messageOn">
+            <label for="messageOn">Send a message in chat</label>
+            <br>
+            <textarea id="message">Check out $target at https://twitch.tv/$target</textarea>
+            <br>
             <label for="headerText">Header:</label>
             <input type="text" id="headerText" value="Check out $target">
             <br>
@@ -64,14 +72,8 @@
                 <input type="file" accept="text/css" oninput="readCSS(this)">
             </label>
             <br>
-            <textarea id="css"></textarea>
+            <textarea id="customcss"></textarea>
             <br>
-            <input type="checkbox" id="shoutoutOn">
-            <label for="shoutoutOn">Send /shoutout command</label>
-            <br>
-            <input type="checkbox" id="messageOn">
-            <label for="messageOn">Send a message in chat:</label>
-            <textarea id="message">Check out $target at https://twitch.tv/$target</textarea>
         </div>
     </div>
 </body>
@@ -86,7 +88,7 @@
         width: 360px;
         height: 50px;
     }
-    #css {
+    #customcss {
         height: 360px;
         white-space: pre;
     }
@@ -147,21 +149,56 @@
     async function init(){
         pass.value=await getPass();
         login.value=await getLogin(pass.value);
+        config=JSON.parse(localStorage.getItem('clippy'))
+        for(const [id, value] of Object.entries(config)){
+            console.log(id,value)
+            const element=document.getElementById(id)
+            if(element==null){
+                continue
+            }
+            switch(element.tagName.toLowerCase()){
+                case 'input':
+                    switch(element.type){
+                        case 'checkbox':
+                            element.checked=value
+                            if(element.onchange){
+                                element.onchange()
+                            }
+                            break
+                        default:
+                            element.value=value
+                    }
+                    break
+                case 'ul':
+                    for(const button of element.querySelectorAll('button')){
+                        removeCommand(button)
+                    }
+                    for(const command of value){
+                        addCommand(command)
+                    }
+                    break
+                default:
+                    element.innerHTML=value
+            }
+        }
     }
 
     async function removeCommand(element){
         element.parentElement.remove()
     }
 
-    async function addCommand(){
-        const commandName=newCommand.value;
+    async function addCommand(commandName=null){
+        if(commandName==null){
+            commandName=newCommand.value;
+        }
         const commandHTML=newCommandHTML.replace('!command',commandName);
+        console.log(commandHTML)
         commands.innerHTML+=commandHTML;
     }
 
     async function copyURL() {
         let settings = {}
-        settings['customcss']=css.value.split(' ').filter((string)=>string!='').join(' ')
+        settings['customcss']=customcss.value.split(' ').filter((string)=>string!='').join(' ')
         settings['client_id'] = client_id;
         settings['login'] = document.getElementById('login').value;
         settings['pass'] = document.getElementById('pass').value;
@@ -173,7 +210,7 @@
             switch (element.id) {
                 case '':
                 case 'newCommand':
-                case 'css':
+                case 'customcss':
                     continue;               
             }
             switch (element.type) {
@@ -191,13 +228,13 @@
         const url = new URL(overlayURLBase);
         url.search = new URLSearchParams(settings)
         navigator.clipboard.writeText(url);
-        console.log(settings)
+        localStorage.setItem('clippy',JSON.stringify(settings))
     }
 
     async function readCSS(input){
         const reader = new FileReader();
         reader.addEventListener("load", function () {
-            css.value+='\n'+reader.result
+            customcss.value+='\n'+reader.result
         }, false);
         reader.readAsText(input.files[0]);
     }
@@ -206,7 +243,7 @@
         let data=button.parentElement.querySelector('input').value
         data=await fetch(data)
         data=await data.text()
-        css.value+='\n'+data
+        customcss.value+='\n'+data
     }
 
     init();
