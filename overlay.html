@@ -166,7 +166,6 @@
             headers: getAuthHeaders()
         });
         const json = await response.json();
-        console.log(json['data'][0]['game_id']);
         return json['data'][0]['game_id'];
     }
 
