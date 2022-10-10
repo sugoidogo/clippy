@@ -136,8 +136,25 @@
         send('PRIVMSG #' + login + ' :' + message)
     }
 
-    function getMods() {
-        send('PRIVMSG #' + login + ' :/mods')
+    async function getMods() {
+        const url=new URL('https://api.twitch.tv/helix/moderation/moderators')
+        url.search=new URLSearchParams({broadcaster_id:bid,first:100})
+        let data=await fetch(url,{headers:getAuthHeaders()})
+        data=await data.json()
+        const newMods=[]
+        for(const mod of data['data']){
+            newMods.push(mod['user_login'])
+            if(!mods.includes(mod['user_login'])){
+                console.log('! mod added: '+mod['user_login'])
+            }
+        }
+        newMods.push(login)
+        for(const mod of mods){
+            if(!newMods.includes(mod)){
+                console.log('! mod removed: '+mod)
+            }
+        }
+        mods=newMods
     }
 
     function getAuthHeaders() {
@@ -333,7 +350,7 @@
         send('PASS oauth:' + pass)
         send('NICK ' + login)
         send('JOIN #' + login)
-        send('CAP REQ :twitch.tv/commands twitch.tv/tags')
+        send('CAP REQ :twitch.tv/tags')
         intervalID = setInterval(getMods, 1000)
     }
 
@@ -344,13 +361,6 @@
 
             if (line.startsWith('PING')) {
                 send('PONG' + line.substring(4))
-                continue;
-            }
-
-            if (line.includes('The moderators of this channel are:')) {
-                mods = line.substring(line.lastIndexOf(':') + 1).replaceAll(' ', '').split(',');
-                mods.unshift(login);
-                console.log('! mods list updated (' + mods.length + '):' + mods);
                 continue;
             }
 
