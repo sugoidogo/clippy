@@ -300,17 +300,18 @@
             });
         }
 
-        if (video.paused) {
-            load(clips.shift())
-        }
-
         if(clips.length==0){
             if (shoutoutOn) {
-            sendMessage('/shoutout ' + clip.name)
+            sendMessage('/shoutout ' + target['display_name'])
             }
         } else {
             queue = queue.concat(clips);
         }
+
+        if (video.paused) {
+            load(queue.shift())
+        }
+
     }
 
     function onopen(event) {
