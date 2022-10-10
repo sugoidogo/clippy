@@ -25,7 +25,6 @@ The options in the right-side panel are for customizing the overlay to your chan
 | Header | The text displayed above the clip |
 | Custom CSS URI | Load css from the internet. Press the "Load CSS" button to use. |
 | Custom CSS File | Same as above, but load from file instead of URL |
-| Send /shoutout command | Use Twitch's new [shoutout command](https://help.twitch.tv/s/article/shoutouts) |
 | Send a message in chat | Send a message as soon as a valid shoutout target is found |
 
 Clippy comes with a custom CSS file to get you started, baed on the [Twitchy TV Font by MaxiGamer](https://www.deviantart.com/maxigamer/art/Twitchy-TV-FONT-594450410). Just hit "Load CSS" to use it.

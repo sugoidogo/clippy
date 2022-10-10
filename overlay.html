@@ -55,7 +55,7 @@
 </style>
 <link rel="stylesheet">
 <script>
-    let pass, login, bid, commands, samegame, first, dur, cut, views, noreplay, autoplay, lastgame, autoso, headerTextPre, shoutoutOn, message, messageOn;
+    let pass, login, bid, commands, samegame, first, dur, cut, views, noreplay, autoplay, lastgame, autoso, headerTextPre, message, messageOn;
     let irc, gid, client_id, intervalID, tid;
     let queue = [];
     let history = [];
@@ -124,9 +124,6 @@
         }
         //*/
         video.src = clip.src;
-        if (shoutoutOn) {
-            sendMessage('/shoutout ' + clip.name)
-        }
     }
 
     function send(message) {
@@ -299,14 +296,8 @@
                 src: getURL(clip)
             });
         }
-
-        if(clips.length==0){
-            if (shoutoutOn) {
-            sendMessage('/shoutout ' + target['display_name'])
-            }
-        } else {
-            queue = queue.concat(clips);
-        }
+        
+        queue = queue.concat(clips);
 
         if (video.paused) {
             load(queue.shift())
@@ -402,7 +393,6 @@
         autoplay = params.get('autoplay') === 'true' || false;
         lastgame = params.get('lastgame') === 'true' || false;
         autoso = params.get('autoso') === 'true' || false;
-        shoutoutOn = params.get('shoutoutOn') === 'true' || false;
         messageOn = params.get('messageOn') === 'true' || false;
         message = params.get('message') || 'Check out $target at https://twitch.tv/$target';
         css.href = params.get('css') || '';
