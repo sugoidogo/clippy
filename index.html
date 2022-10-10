@@ -124,7 +124,7 @@
                 'https://id.twitch.tv/oauth2/authorize'
                 + '?response_type=token'
                 + '&client_id='+client_id
-                + '&scope=chat:read chat:edit'
+                + '&scope=chat:read chat:edit moderation:read'
             )+'&redirect_uri='+window.location.href.split('?')[0];
             throw e;
         }
