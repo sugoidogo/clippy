@@ -302,6 +302,31 @@
 
     }
 
+    async function queueClip(id){
+        console.debug(id)
+        const url = new URL('https://api.twitch.tv/helix/clips');
+        url.search = new URLSearchParams({id:id});
+        let response = await fetch(url, {
+            headers: getAuthHeaders()
+        });
+        const json = await response.json();
+        const clip = json['data'][0];
+        console.debug(clip)
+        const target=await getBroadcasterInfo(clip['broadcaster_name'])
+        console.debug(target)
+        queue.push({
+            img: target['profile_image_url'],
+            name: target['display_name'],
+            src: getURL(clip)
+        })
+        if (messageOn) {
+            sendMessage(message.replaceAll('$target', target.display_name))
+        }
+        if (video.paused) {
+            load(queue.shift())
+        }
+    }
+
     function onopen(event) {
         send('PASS oauth:' + pass)
         send('NICK ' + login)
@@ -341,7 +366,12 @@
                 const user = line.substring(line.indexOf(':') + 1, line.indexOf('!'))
                 if (mods.includes(user) && line.includes(command)) {
                     const target = line.substring(line.lastIndexOf(command) + command.length).trim();
-                    await shoutout(target);
+                    try{
+                        await queueClip(new URL(target).pathname.substring(1))
+                    } catch (e) {
+                        console.debug(e)
+                        await shoutout(target);
+                    }
                 }
             }
         }
