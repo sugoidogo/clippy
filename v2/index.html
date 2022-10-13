@@ -1,0 +1,423 @@
+<h1>Clippy</h1>
+<h3>Don't show this browser window on stream</h2>
+<div id="status">Loading...</div>
+<button hidden id="obsAuth">Connect to OBS</button>
+<button hidden id="twitchAuth">Connect to Twitch</button>
+<div hidden id="config">
+    <select id="instance"></select>
+    <button id="refreshInputs">refresh</button>
+    <div id="new" hidden>
+        <label>
+            Scene:
+            <select id="sceneSelect"></select>
+        </label><button id="refreshScenes">refresh</button><br>
+        <label>
+            Name:
+            <input type="text" id="name" value="clippy">
+        </label><br>
+        <button id="createNewInstance">Create</button>
+    </div>
+    <div id="existing" hidden>
+        <button id="deleteInstance">delete this instance</button><br>
+        <label>
+            <input type="checkbox" id="autoplay" class="config">
+            Auto-play clips from my channel
+        </label><br>
+        <label>
+            <input type="checkbox" id="autoso" class="config">
+            Auto-shoutout users that raid me
+        </label><br>
+        <input type="text" id="newCommand">
+        <button id="addNewCommand">Add Command</button>
+        <br>
+        <ul id="commands" class="config"></ul><br>
+        <label>
+            <input type="checkbox" id="messageOn" class="config">
+            Send a message in chat (you can use 
+            <a href="https://dev.twitch.tv/docs/api/reference#get-users:~:text=login%3D%3Clogin%20name%3E...-,Response%20Fields,-Field">
+                these variables
+            </a>)
+        </label><br>
+        <textarea id="message" class="config"></textarea><br>
+        <label>
+            Search the last
+            <input type="number" min="1" max="100" value="20" id="first" class="config">
+            clips
+        </label><br>
+        <label>
+            Add new filter:
+            <select id="filterSelector">
+                <option value="history">history</option>
+                <option value="category">category</option>
+                <option value="length">length</option>
+                <option value="singke">single clip</option>
+            </select>
+            <button id="addFilter">add</button>
+        </label>
+        <ol id="filters" class="config"></ol><br>
+        <label>
+            Header text (you can use 
+            <a href="https://dev.twitch.tv/docs/api/reference#get-clips:~:text=the%20started_at%20value.-,Response%20Fields,-Field">
+                these variables
+            </a>
+            )<br>
+            <input type="text" id="header" class="config">
+        </label><br>
+        <label>
+            <input type="checkbox" id="footerOn" class="config">
+            Show footer text (you can use 
+            <a href="https://dev.twitch.tv/docs/api/reference#get-clips:~:text=the%20started_at%20value.-,Response%20Fields,-Field">
+                these variables
+            </a>
+            )
+        </label><br>
+        <input type="text" id="footer" class="config"><br>
+        <label>
+            Add custom assets:
+            <input type="file" id="loadAsset">
+        </label>
+        <table id="assets" class="config"></table>
+        <label>
+            Cut off clips longer than
+            <input type="number" min="5" max="60" value="60" id="cut" class="config">
+            seconds
+        </label><br>
+        <button id="apply">Save & Apply These Settings</button>
+    </div>
+</div>
+<div hidden id="templates">
+    <table><tr id="asset">
+        <td><button id="removeButton">remove</button></td>
+        <td id="label"></td>
+        <td id="data"></td>
+    </tr></table>
+    <li id="command">
+        <button id="removeButton">remove</button>
+        <span></span>
+    </li>
+    <li draggable="true" id="history">
+        <button id="removeButton">remove</button>
+        Avoid previously played clips
+        <label>
+            <input type="checkbox" id="keepHistory">
+            keep history across sessions
+        </label>
+    </li>
+    <li draggable="true" id="category">
+        <button id="removeButton">remove</button>
+        Prefer a streaming category
+        <select id="mode">
+            <option value="self">My category</option>
+            <option value="target">The target's category</option>
+        </select>
+    </li>
+    <li draggable="true" id="length">
+        <button id="removeButton">remove</button>
+        Prefer clips shorter than
+        <input type="number" min="5" max="60" value="30" id="time">
+        seconds
+    </li>
+    <li draggable="true" id="single">
+        <button id="removeButton">remove</button>
+        Select a single clip
+        <select id="mode">
+            <option value="random">randomly</option>
+            <option value="views">with the most views</option>
+        </select>
+    </li>
+</div>
+<style>
+    textarea,#header,#footer {
+        width: 365
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/obs-websocket-js@5.0.2/dist/obs-ws.min.js" 
+    integrity="sha256-h/nnsIkJJZMNu08xQJBMuUvcrgcUj1YlTYmoA0q4Ep8=" 
+    crossorigin="anonymous">
+</script>
+<script type="module">
+    const status=document.querySelector('#status')
+    const hashParams=Object.fromEntries(new URLSearchParams(location.hash.substring(1)))
+    if(!('access_token' in hashParams)){
+        const twitchAuth=document.querySelector('#twitchAuth')
+        const url=new URL('https://id.twitch.tv/oauth2/authorize')
+        url.search=new URLSearchParams({
+            client_id:'72wtxvzs6erokrj33lk105whmoo381',
+            response_type:'token',
+            scope: 'chat:read chat:edit moderation:read'
+        })
+        url.href+='&redirect_uri='+location.origin+location.pathname
+        twitchAuth.onclick=async function(){
+            location.assign(url)
+        }
+        status.hidden=true
+        twitchAuth.hidden=false
+        throw 'Error: Twitch Auth Required'
+    }
+
+    const searchParams=Object.fromEntries(new URLSearchParams(location.search))
+    if(searchParams['userChoice']!='allow'){
+        const obsAuth=document.querySelector('#obsAuth')
+        const url=new URL('https://sugoidogo.github.io/obsconnect')
+        url.search=new URLSearchParams({redirect_uri:location.href})
+        obsAuth.onclick=async function(){
+            location.assign(url)
+        }
+        status.hidden=true
+        obsAuth.hidden=false
+        throw 'Error: OBS Auth Required'
+    }
+
+    const obs=new OBSWebSocket()
+    obs.addListener('ConnectionClosed',async function onConnectionClosed(error){
+        status.hidden=false
+        status.innerText='OBS Code '+error.code+': '+error.message
+    })
+    const inputKind='browser_source'
+    const getSceneList=()=>obs.call('GetSceneList',{}).then(onGetSceneList)
+    const getInputList=()=>obs.call('GetInputList',{inputKind:inputKind}).then(onGetInputList)
+    document.querySelector('#refreshScenes').onclick=getSceneList
+    document.querySelector('#refreshInputs').onclick=getInputList
+    obs.addListener('Identified',async function onIdentified(){
+        getSceneList()
+        getInputList()
+    })
+    const sceneSelect=document.querySelector('#sceneSelect')
+    async function onGetSceneList(response){
+        console.debug(response)
+        while(sceneSelect.hasChildNodes()){
+            sceneSelect.childNodes[0].remove()
+        }
+        for(const scene of response['scenes']){
+            const option=document.createElement('option')
+            option.innerText=scene['sceneName']
+            sceneSelect.appendChild(option)
+        }
+    }
+    
+    let inputs=[]
+    async function onGetInputList(response){
+        console.debug(response)
+        const requestBatch=[]
+        inputs=response['inputs']
+        for(const input of inputs){
+            requestBatch.push({
+                requestType:'GetInputSettings',
+                requestData:{
+                    inputName:input['inputName']
+                }
+            })
+        }
+        return obs.callBatch(requestBatch).then(onGetInputSettings)
+    }
+    const instanceSelect=document.querySelector('#instance')
+    async function onGetInputSettings(response){
+        console.debug(response)
+        while(instanceSelect.hasChildNodes()){
+            instanceSelect.childNodes[0].remove()
+        }
+        inputs=inputs.filter(function(input,index){
+            const inputSettings=response[index]['responseData']['inputSettings']
+            if('url' in inputSettings && inputSettings['url'].startsWith(location.origin+location.pathname)){
+                Object.assign(input,inputSettings)
+                const option=document.createElement('option')
+                option.innerText=input['inputName']
+                instanceSelect.appendChild(option)
+                return true
+            }
+            return false
+        })
+        console.debug(inputs)
+        const option=document.createElement('option')
+        option.innerText='Create New Instance'
+        option.value=''
+        instanceSelect.appendChild(option)
+        instanceSelect.onchange=onInstanceSelect
+        const inputs2={}
+        for(const input of inputs){
+            inputs2[input['inputName']]=input['inputSettings']
+        }
+        inputs=inputs2
+        await onInstanceSelect()
+        document.querySelector('#config').hidden=false
+        status.hidden=true
+    }
+    const dataPrefix='clippy_v2_'
+    document.querySelector('#instance').onchange=onInstanceSelect
+    async function onInstanceSelect(configData=null){
+        const name=instanceSelect.value
+        console.debug(name)
+        const newConfig=document.querySelector('#new')
+        const config=document.querySelector('#existing')
+        if(name==''){
+            newConfig.hidden=false
+            config.hidden=true
+            return
+        }
+        if(configData==null || !('autoplay' in configData)){
+            configData=await obs.call('GetPersistentData',{
+                realm:'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
+                slotName:dataPrefix+name
+            })
+        }
+        console.debug(configData)
+        if('slotValue' in configData){
+            configData=configData['slotValue']
+        }
+        for(const [id,value] of Object.entries(configData)){
+            const element=document.getElementById(id)
+            const templates=document.querySelector('#templates')
+            while(element.hasChildNodes()){
+                element.childNodes[0].remove()
+            }
+            switch (element.tagName.toLowerCase()){
+                case 'input':
+                    switch(element.type){
+                        case 'checkbox':
+                            element.checked=value
+                            break
+                        default: 
+                            element.value=value
+                            break
+                    }
+                    break;
+                case 'textarea':
+                    element.value=value
+                    break
+                case 'ol':
+                    const filterList=document.querySelector('#filters')
+                    for(const [name,args] of Object.entries(value)){
+                        console.debug(name,args)
+                        const filter=templates.querySelector('#'+name).cloneNode(true)
+                        filter.querySelector('#removeButton').onclick=()=>filter.remove()
+                        for(const [arg,value] of Object.entries(args)){
+                            const element=filter.querySelector('#'+arg)
+                            switch(element.type){
+                                case 'checkbox':
+                                    element.checked=value
+                                    break
+                                default: 
+                                    element.value=value
+                                    break
+                            }
+                        }
+                        filters.appendChild(filter)
+                    }
+                    break
+                case 'ul':
+                    const commandList=document.querySelector('#commands')
+                    for(const command of value){
+                        const listItem=templates.querySelector('#command').cloneNode(true)
+                        listItem.querySelector('#removeButton').onclick=()=>listItem.remove()
+                        listItem.querySelector('span').innerText=command
+                        commandList.appendChild(listItem)
+                    }
+                    break
+                case 'table':
+                    for(const [label,data] of Object.entries(value)){
+                        const tableRow=templates.querySelector('#asset').cloneNode(true)
+                        tableRow.querySelector('#removeButton').onclick=()=>tableRow.remove()
+                        tableRow.querySelector('#label').innerText=label
+                        tableRow.querySelector('#data').innerText=data
+                        element.appendChild(tableRow)
+                    }
+                    break
+                default:
+                    console.warn('unknown config item',id,value)
+                    break
+            }
+        }
+        config.hidden=false
+        newConfig.hidden=true
+    }
+
+    const inputOBSURL=new URL(searchParams['obsurl'])
+    inputOBSURL.host='localhost'
+    const defaultConfig={
+        autoplay:false,
+        autoso:false,
+        commands:['!so','!shoutout'],
+        messageOn:false,
+        message:'Check out display_name at https://twitch.tv/login',
+        header:'Check out broadcaster_name',
+        footerOn:true,
+        footer:'title',
+        assets:{},
+        first:20,
+        filters:{
+            history:{
+                keepHistory:false
+            },
+            single:{
+                mode:'random'
+            }
+        },
+        cut:60
+    }
+    {
+        const fileReader=new FileReader()
+        fileReader.onloadend=async function(){
+            defaultConfig.assets['TwitchyTV']=fileReader.result
+            console.debug(defaultConfig)
+        }
+        fetch('TwitchyTV.css')
+            .then((response)=>response.blob())
+            .then((blob)=>fileReader.readAsDataURL(blob))
+    }
+    document.querySelector('#createNewInstance').onclick=async function(){
+        const inputName=document.querySelector('#name').value
+        const sceneName=sceneSelect.value
+        const url=new URL(location.origin+location.pathname+'overlay.html')
+        url.search=new URLSearchParams({
+            obsurl:inputOBSURL.href,
+            obspassword:searchParams['obspassword'],
+            inputName:inputName
+        })
+        obs.call('CreateInput',{
+            sceneName:sceneName,
+            inputName:inputName,
+            inputKind:inputKind,
+            inputSettings:{
+                height:1080,
+                width:1920,
+                url:url.href
+            }
+        }).then(async function onCreateInput(){
+            obs.call('SetPersistentData',{
+                realm:'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
+                slotName:dataPrefix+inputName,
+                slotValue:defaultConfig
+            })
+        }).then(async function onSetPersistentData(){
+            const option=document.createElement('option')
+            option.innerText=inputName
+            instanceSelect.appendChild(option)
+            instanceSelect.value=inputName
+            onInstanceSelect(defaultConfig)
+        })
+    }
+    document.querySelector('#deleteInstance').onclick=async function deleteInstance(){
+        const inputName=instanceSelect.value
+        obs.callBatch([
+            {
+                requestType:'SetPersistentData',
+                requestData:{
+                    realm:'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
+                    slotName:dataPrefix+inputName,
+                    slotValue:{}
+                }
+            },
+            {
+                requestType:'RemoveInput',
+                requestData:{
+                    inputName:inputName
+                }
+            }
+        ]).then((response)=>console.debug(response))
+        const index=instanceSelect.selectedIndex
+        instanceSelect.remove(index)
+        onInstanceSelect()
+    }
+    //TODO #addNewCommand #addFilter #loadAsset
+    obs.connect(searchParams['obsurl'],searchParams['obspassword'])
+</script>
