@@ -30,4 +30,4 @@ The options in the right-side panel are for customizing the overlay to your chan
 Clippy comes with a custom CSS file to get you started, baed on the [Twitchy TV Font by MaxiGamer](https://www.deviantart.com/maxigamer/art/Twitchy-TV-FONT-594450410). Just hit "Load CSS" to use it.
 ## Support
 - Get support via [Discord](https://discord.gg/PbGT9tVWTC)
-- Give support via [PayPal](https://paypal.me/SugoiDogo)
+- Give support via [Ko-Fi](https://ko-fi.com/sugoidogo)
