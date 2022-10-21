@@ -1,0 +1,404 @@
+<header>
+    <img>
+    <span></span>
+</header>
+<video autoplay></video>
+<footer>footer</footer>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        opacity: 0;
+    }
+
+    body.playing {
+        opacity: 1;
+    }
+
+    img {
+        height: 10vh;
+        border-radius: 50%;
+        border: 0.75vh solid blueviolet;
+        vertical-align: bottom;
+    }
+
+    header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        font-size: 10vh;
+        z-index: 2;
+    }
+
+    video {
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        font-size: 5vh;
+        z-index: 2;
+        text-align: center;
+    }
+
+    header,
+    footer {
+        font-family: Inter, Roobert, Helvetica Neue, Helvetica, Arial, sans-serif;
+        color: blueviolet;
+        text-shadow:
+            0.01em 0.01em 0px black,
+            -0.01em 0.01em 0px black,
+            0.01em -0.01em 0px black,
+            -0.01em -0.01em 0px black;
+        white-space: nowrap;
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/obs-websocket-js@5.0.2/dist/obs-ws.min.js"
+    integrity="sha256-h/nnsIkJJZMNu08xQJBMuUvcrgcUj1YlTYmoA0q4Ep8=" crossorigin="anonymous">
+    </script>
+<script type="module">
+    let access_token = ''
+    let config = {}
+    let self = {}
+    let mods = []
+    let history = []
+    const queue = []
+    const raidMarker = 'msg-param-login='
+    const dataPrefix = 'clippy.v2.'
+    const client_id = '72wtxvzs6erokrj33lk105whmoo381'
+    const searchParams = Object.fromEntries(new URLSearchParams(location.search))
+    const obsurl = searchParams['obsurl']
+    const obspassword = searchParams['obspassword']
+    const inputName = searchParams['inputName']
+    const irc = new WebSocket('wss://irc-ws.chat.twitch.tv:443')
+
+    function send(message) {
+        console.debug('< ' + message)
+    }
+
+    function sendChat(message) {
+        send('PRIVMSG #' + self.login + ' :' + message)
+    }
+
+    async function getUsers(...logins) {
+        const url = new URL('https://api.twitch.tv/helix/users')
+        let users = []
+        do {
+            const searchParams = new URLSearchParams()
+            for (const login of logins.splice(0, 100)) {
+                searchParams.append('login', login)
+            }
+            url.search = searchParams
+            const response = await fetch(url, { headers: getAuthHeaders() })
+            const json = await response.json()
+            users = users.concat(json['data'])
+        } while (logins.length != 0)
+        return users
+    }
+
+    async function getChannel(broadcaster_id) {
+        const url = new URL('https://api.twitch.tv/helix/channels')
+        url.search = new URLSearchParams({ broadcaster_id: broadcaster_id })
+        const response = await fetch(url, { headers: getAuthHeaders() })
+        const json = await response.json()
+        return json.data[0]
+    }
+
+    async function getClips(broadcaster_id) {
+        const url = new URL('https://api.twitch.tv/helix/clips');
+        url.search = new URLSearchParams({
+            broadcaster_id: broadcaster_id,
+            first: config.first
+        })
+        const response = await fetch(url, { headers: getAuthHeaders() })
+        const json = await response.json()
+        return json['data']
+    }
+
+    function tryFilter(clips, filter, target) {
+        let newClips = []
+        switch (filter.type) {
+            case 'history':
+                newClips = clips.filter(clip => !history.includes(clip.id))
+                if(newClips.length==0){
+                    let index=-1
+                    for(const clip of clips){
+                        if(history.indexOf(clip.id)>index){
+                            index=history.indexOf(clip.id)
+                        }
+                    }
+                    history.splice(index,1)
+                    newClips = clips.filter(clip => !history.includes(clip.id))
+                }
+                break
+            case 'category':
+                let game_id = 0
+                switch (filter.mode) {
+                    case 'self':
+                        game_id = self.game_id
+                        break
+                    case 'target':
+                        game_id = target.game_id
+                        break
+                }
+                newClips = clips.filter(clip => clip.game_id = game_id)
+                break
+            case 'length':
+                newClips = clips.filter(clip => clip.duration <= filter.time)
+                break
+            case 'single':
+                switch (filter.mode) {
+                    case 'views':
+                        let view_count = 0
+                        for (const clip of clips) {
+                            if (clip.view_count > view_count) {
+                                view_count = clip.view_count
+                            }
+                        }
+                        clips = clips.filter(clip => clip.view_count >= view_count)
+                    case 'random':
+                        const index = Math.floor(Math.random() * clips.length)
+                        newClips.push(clips[index])
+                        break
+                }
+                break
+        }
+        if (newClips.length == 0) {
+            return clips
+        } else {
+            return newClips
+        }
+    }
+
+    function getVideoURL(clip) {
+        return clip.thumbnail_url.replaceAll(/-preview-.*/g, '.mp4')
+    }
+
+    function parseVars(string, vars) {
+        for (const [key, val] of Object.entries(vars)) {
+            string = string.replaceAll(key, val)
+        }
+        return string
+    }
+
+    function cut() {
+        document.querySelector('video').pause()
+    }
+
+    function fitText(element, maxPercent) {
+        element.style.fontSize = maxPercent + 'vh'
+        let size = parseInt(getComputedStyle(element).fontSize)
+        element.style.fontSize = size + 'px'
+        while (element.scrollWidth > innerWidth) {
+            size -= 1
+            element.style.fontSize = size + 'px'
+        }
+        return size
+    }
+
+    async function loadNext() {
+        document.querySelector('body').classList.remove('playing')
+        const clip = queue.shift()
+        const src = getVideoURL(clip)
+        const header = parseVars(config.header, clip)
+        const footer = parseVars(config.footer, clip)
+        document.querySelector('img').src = clip.profile_image_url
+        document.querySelector('img').style.height=10+'vh'
+        document.querySelector('span').innerText = header
+        document.querySelector('img').style.height=fitText(document.querySelector('header'), 10)
+        document.querySelector('footer').innerText = footer
+        fitText(document.querySelector('footer'), 5)
+        document.querySelector('video').src = src
+        if (config.cut) {
+            setTimeout(cut, config.time)
+        }
+    }
+
+    document.querySelector('video').onended = loadNext
+    document.querySelector('video').onpause = loadNext
+    document.querySelector('video').onplay = () => document.querySelector('body').classList.add('playing')
+
+    async function shoutout(target) {
+        Object.assign(self, await getChannel(self.id))
+        getUsers(target).then(async function onGetTarget(users) {
+            target = users[0]
+            const channel = await getChannel(target.id)
+            Object.assign(target, channel)
+            if (config.messageOn) {
+                let message = config.message
+                for (const [key, val] of Object.entries(target)) {
+                    message = message.replaceAll(key, val)
+                }
+                sendChat(message)
+            }
+            getClips(target.id).then(clips => {
+                for (const filter of config.filters) {
+                    clips = tryFilter(clips, filter, target)
+                }
+                for (const clip of clips) {
+                    queue.push(Object.assign(target, clip))
+                    history.push(clip.id)
+                    if (config.keepHistory) {
+                        obs.call('SetPersistentData', {
+                            realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
+                            slotName: dataPrefix + inputName + '.history',
+                            slotValue: history
+                        })
+                    }
+                }
+                if (document.querySelector('video').paused) {
+                    loadNext()
+                }
+            })
+        })
+    }
+
+    window.shoutout = shoutout
+    window.sendChat = sendChat
+
+    irc.onmessage = async function onMessage(event) {
+        console.debug('> ' + event.data)
+        for (const message of event.data.split('\r\n').filter(message => message != '')) {
+
+            if (message.startsWith('PING')) {
+                send('PONG' + message.substring(4))
+                continue
+            }
+
+            if (config.autoso && message.includes(raidMarker)) {
+                const startIndex = message.indexOf(raidMarker) + raidMarker.length
+                const raider = message.substring(startIndex).split(';')[0]
+                console.debug('!', 'raid', raider)
+                if (!config.messageOn) {
+                    sendChat(config.commands[0])
+                }
+                shoutout(raider)
+            }
+
+            for (const command of config.commands) {
+                if (message.includes(command)) {
+                    const user = message.substring(message.indexOf(':') + 1, line.indexOf('!'))
+                    if (!mods.includes(user)) {
+                        continue
+                    }
+                    const target = line.substring(line.lastIndexOf(command) + command.length).trim();
+                    shoutout(target)
+                }
+            }
+        }
+    }
+
+    const obs = new OBSWebSocket()
+
+    function getAuthHeaders() {
+        return {
+            'Authorization': 'Bearer ' + access_token,
+            'Client-Id': client_id
+        }
+    }
+
+    async function getModerators(broadcaster_id) {
+        const url = new URL('https://api.twitch.tv/helix/moderation/moderators')
+        url.search = new URLSearchParams({
+            broadcaster_id: self.id,
+            first: 100
+        })
+        let response = await fetch(url, { headers: getAuthHeaders() })
+        let json = await response.json()
+        const moderators = []
+        for (const moderator of json['data']) {
+            moderators.push(moderator['user_login'])
+        }
+        while (json['pagination']['cursor']) {
+            url.search = new URLSearchParams({
+                broadcaster_id: self.id,
+                first: 100,
+                after: json['pagination']['cursor']
+            })
+            response = await fetch(url, { headers: getAuthHeaders() })
+            json = await response.json()
+            for (const moderator of json['data']) {
+                moderators.push(moderator['user_login'])
+            }
+        }
+        return moderators
+    }
+
+    async function getMods() {
+        const newMods = await getModerators(self.id)
+        newMods.unshift(self.login)
+        for (const mod of newMods) {
+            if (!mods.includes(mod)) {
+                console.log('!', 'mod added:', mod)
+            }
+        }
+        for (const mod of mods) {
+            if (!newMods.includes(mod)) {
+                console.log('!', 'mod removed:', mod)
+            }
+        }
+        mods = newMods
+    }
+
+    obs.addListener('ConnectionClosed', async function onConnectionClosed() {
+        obs.connect(obsurl, obspassword)
+    })
+    obs.addListener('Identified', async function onIdentified() {
+        obs.call('GetPersistentData', {
+            realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
+            slotName: dataPrefix + 'access_token'
+        }).then(async function onGetAccessToken(response) {
+            access_token = response.slotValue
+            return getUsers()
+        }).then(async function onGetSelf(response) {
+            self = response[0]
+            console.debug(self)
+            document.querySelector('img').src=self.profile_image_url
+            getMods()
+            setInterval(getMods, 1000)
+            irc.onopen = async function onOpen() {
+                irc.send('CAP REQ :twitch.tv/tags')
+                irc.send('PASS oauth:' + access_token)
+                irc.send('NICK ' + self['login'])
+                irc.send('JOIN #' + self['login'])
+            }
+            if (irc.readyState == irc.OPEN) {
+                irc.onopen()
+            }
+            return obs.call('GetPersistentData', {
+                realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
+                slotName: dataPrefix + inputName
+            })
+        }).then(async function onGetConfig(response) {
+            config = response.slotValue
+            console.debug(config)
+            if (config.keepHistory) {
+                obs.call('GetPersistentData', {
+                    realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
+                    slotName: dataPrefix + inputName+'.history'
+                }).then(response=>history=response.slotValue || [])
+            }
+            for(let [id,data] of Object.entries(config.assets)){
+                fetch(data).then(response=>response.blob()).then(async(blob)=>{
+                    switch(true){
+                        case blob.type=='text/css':{
+                            const css=document.createElement('style')
+                            css.id=id
+                            css.innerText=await blob.text()
+                            document.querySelector('body').appendChild(css)
+                            break
+                        }
+                    }
+                })
+            }
+        })
+    })
+
+    obs.connect(obsurl, obspassword)
+</script>

@@ -65,15 +65,14 @@
                 )<br>
                 <input type="text" id="header" class="config">
             </label><br>
-            <label>
-                <input type="checkbox" id="footerOn" class="config">
-                Show footer text (you can use
+            <span>
+                Footer text (you can use
                 <a target="_blank"
                     href="https://dev.twitch.tv/docs/api/reference#get-clips:~:text=the%20started_at%20value.-,Response%20Fields,-Field">
                     these variables
                 </a>
                 )
-            </label><br>
+            </span><br>
             <input type="text" id="footer" class="config"><br>
             <label>
                 Add custom assets:
@@ -109,7 +108,7 @@
             <button id="removeButton">remove</button>
             Avoid previously played clips
             <label>
-                <input type="checkbox" id="keepHistory" class="filterProp">
+                <input type="checkbox" id="keepHistory" class="filterprop preconfig">
                 keep history across sessions
             </label>
         </li>
@@ -124,10 +123,10 @@
         <li draggable="true" id="length" class="filter">
             <button id="removeButton">remove</button>
             Prefer clips shorter than
-            <input type="number" min="5" max="60" value="30" id="time" class="filterProp">
+            <input type="number" min="5" max="60" value="30" id="time" class="filterProp preconfig">
             seconds
             <label>
-                <input type="checkbox" id="cut" class="filterProp">
+                <input type="checkbox" id="cut" class="filterprop preconfig">
                 Cut off longer clips
             </label>
         </li>
@@ -220,10 +219,10 @@
         obs.addListener('Identified', async function onIdentified() {
             getSceneList()
             getInputList()
-            obs.call('SetPersistentData',{
-                realm:'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
-                slotName:dataPrefix+'access_token',
-                slotValue:hashParams['access_token']
+            obs.call('SetPersistentData', {
+                realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
+                slotName: dataPrefix + 'access_token',
+                slotValue: hashParams['access_token']
             })
         })
         const sceneSelect = document.querySelector('#sceneSelect')
@@ -324,15 +323,16 @@
         }
 
         async function addFilter(...filters) {
-            if (filters.length==0) {
+            if (filters.length == 0) {
                 const filterSelector = document.querySelector('#filterSelector')
-                filters.push({type:filterSelector.value})
+                filters.push({ type: filterSelector.value })
             }
             console.debug('addFilter', filters)
             const filterList = document.querySelector('#filters')
             for (const filter of filters) {
                 console.debug('addFilter', filter)
                 const filterElement = templates.querySelector('#' + filter.type).cloneNode(true)
+                filterElement.innerHTML = filterElement.innerHTML.replaceAll('preconfig', 'config')
                 filterElement.querySelector('#removeButton').onclick = () => filterElement.remove()
                 filterElement.ondragstart = onDragStart
                 filterElement.ondragenter = onDragEnter
@@ -448,6 +448,10 @@
             }
             for (const [id, value] of Object.entries(configData)) {
                 const element = document.getElementById(id)
+                if (element == null) {
+                    console.warn('unused config entry', id, value)
+                    continue
+                }
                 while (element.hasChildNodes()) {
                     element.childNodes[0].remove()
                 }
@@ -486,35 +490,38 @@
         const inputOBSURL = new URL(searchParams['obsurl'])
         inputOBSURL.host = 'localhost'
         const defaultConfig = {
-            assets:{},
-            autoplay: false,
-            autoso: false,
-            commands: ['!so', '!shoutout'],
-            messageOn: false,
-            message: 'Check out display_name at https://twitch.tv/login',
-            header: 'Check out broadcaster_name',
-            footerOn: true,
-            footer: 'title',
-            assets: {},
-            first: 20,
-            filters: [
+            "autoplay": false,
+            "autoso": false,
+            "commands": [
+                "!so",
+                "!shoutout"
+            ],
+            "messageOn": false,
+            "message": "Check out display_name: description https://twitch.tv/login",
+            "first": 20,
+            "filters": [
                 {
-                    type:'history',
-                    keepHistory:true
+                    "type": "history",
+                    "keepHistory": true
                 },
                 {
-                    type:'single',
-                    mode:'views'
+                    "type": "single",
+                    "mode": "views"
                 }
             ],
-            cut: 60
+            "keepHistory": true,
+            "time": 30,
+            "cut": false,
+            "header": "Check out broadcaster_name",
+            "footer": "'title' by creator_name",
+            "assets": {}
         }
-        fetch('TwitchyTV.css')
+        fetch('css/twitchyLoader.css')
             .then((response) => response.blob())
             .then((blob) => dataURL(blob))
             .then(dataURL => defaultConfig.assets['TwitchyTV'] = dataURL)
-            .then(()=>console.debug('default config',defaultConfig))
-        
+            .then(() => console.debug('default config', defaultConfig))
+
         document.querySelector('#createNewInstance').onclick = async function createNewInstance() {
             const inputName = document.querySelector('#name').value
             const sceneName = sceneSelect.value
@@ -559,15 +566,33 @@
                     }
                 },
                 {
+                    requestType: 'SetPersistentData',
+                    requestData: {
+                        realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
+                        slotName: dataPrefix + inputName + '.history',
+                        slotValue: {}
+                    }
+                },
+                {
                     requestType: 'RemoveInput',
                     requestData: {
                         inputName: inputName
                     }
                 }
-            ]).then((response) => console.debug('deleteInstance',response))
+            ]).then((response) => console.debug('deleteInstance', response))
             const index = instanceSelect.selectedIndex
             instanceSelect.remove(index)
             onInstanceSelect()
+        }
+        function getElementValue(input) {
+            switch (input.type) {
+                case 'number':
+                    return parseInt(input.value)
+                case 'checkbox':
+                    return input.checked
+                default:
+                    return input.value
+            }
         }
         document.querySelector('#apply').onclick = async function apply() {
             const config = {}
@@ -575,7 +600,7 @@
                 switch (element.tagName.toLowerCase()) {
                     case 'textarea':
                     case 'input':
-                        config[element.id] = element.checked || element.value
+                        config[element.id] = getElementValue(element)
                         break
                     case 'ul':
                         const commands = []
@@ -588,9 +613,9 @@
                         const filters = []
                         for (const filterElement of element.querySelectorAll('.filter')) {
                             const filter = {}
-                            filter['type']=filterElement.id
+                            filter['type'] = filterElement.id
                             for (const propElement of filterElement.querySelectorAll('.filterProp')) {
-                                filter[propElement.id] = propElement.value
+                                filter[propElement.id] = getElementValue(propElement)
                             }
                             filters.push(filter)
                         }
@@ -610,7 +635,7 @@
                         break
                 }
             }
-            console.debug('apply',config)
+            console.debug('apply', config)
             obs.call('SetPersistentData', {
                 realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
                 slotName: dataPrefix + instanceSelect.value,
