@@ -283,11 +283,11 @@
 
             for (const command of config.commands) {
                 if (message.includes(command)) {
-                    const user = message.substring(message.indexOf(':') + 1, line.indexOf('!'))
+                    const user = message.substring(message.indexOf(':') + 1, message.indexOf('!'))
                     if (!mods.includes(user)) {
                         continue
                     }
-                    const target = line.substring(line.lastIndexOf(command) + command.length).trim();
+                    const target = message.substring(message.lastIndexOf(command) + command.length).trim();
                     shoutout(target)
                 }
             }
