@@ -3,7 +3,7 @@
     src: url('Twitchy.TV.otf');
 }
 
-#headerText {
+header,footer {
     font-family: twitch;
     color: white;
     text-shadow: none;
