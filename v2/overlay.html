@@ -233,9 +233,7 @@
             Object.assign(target, channel)
             if (config.messageOn) {
                 let message = config.message
-                for (const [key, val] of Object.entries(target)) {
-                    message = message.replaceAll(key, val)
-                }
+                message=parseVars(message,target)
                 sendChat(message)
             }
             getClips(target.id).then(clips => {
