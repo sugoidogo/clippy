@@ -5,7 +5,7 @@
         <img>
         <h1 id="headerText"></h1>
     </div>
-    <video autoplay></video>
+    <video preload="auto"></video>
 </body>
 <style>
     body {
@@ -78,7 +78,8 @@
         return !history.includes(getURL(clip));
     }
 
-    function onplay() {
+    function oncanplaythrough() {
+        video.play()
         body.style.opacity = 100;
         if (cut) {
             tid = setTimeout(onended, cut * 1000);
@@ -438,7 +439,7 @@
         irc.onmessage = onmessage;
         irc.onerror = onerror;
         irc.onclose = onerror;
-        video.onplay = onplay;
+        video.oncanplaythrough = oncanplaythrough;
         video.onended = onended;
         setTextSize(parseFloat(window.getComputedStyle(headerText).getPropertyValue('font-size')));
         if (autoplay) {
