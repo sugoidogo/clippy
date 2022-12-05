@@ -286,7 +286,10 @@
                     if (!mods.includes(user)) {
                         continue
                     }
-                    const target = message.substring(message.lastIndexOf(command) + command.length).trim();
+                    const target = line.substring(line.lastIndexOf(command) + command.length).trim();
+                    if(target[0]=='@'){
+                        target=target.substring(1)
+                    }
                     shoutout(target)
                 }
             }
