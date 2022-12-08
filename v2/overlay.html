@@ -1,406 +1,275 @@
-<header>
-    <img>
-    <span></span>
-</header>
-<video autoplay></video>
-<footer>footer</footer>
+<body>
+    <header>
+        <img hidden>
+        <h1 hidden></h1>
+    </header>
+    <video autoplay></video>
+    <footer><h2 hidden></h2></footer>
+</body>
 <style>
     body {
-        margin: 0;
         overflow: hidden;
+        margin: 0px;
         opacity: 0;
     }
-
-    body.playing {
-        opacity: 1;
+    header{
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        right: 0px;
     }
-
-    img {
-        height: 10vh;
-        border-radius: 50%;
-        border: 0.75vh solid blueviolet;
-        vertical-align: bottom;
+    footer{
+        position: absolute;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
     }
-
-    header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
+    header,footer{
+        display: flex;
+        align-items: center;
+    }
+    h1,h2 {
         font-size: 10vh;
-        z-index: 2;
-    }
-
-    video {
-        width: 100%;
-        height: 100%;
-        z-index: 1;
-    }
-
-    footer {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        font-size: 5vh;
-        z-index: 2;
-        text-align: center;
-    }
-
-    header,
-    footer {
-        font-family: Inter, Roobert, Helvetica Neue, Helvetica, Arial, sans-serif;
-        color: blueviolet;
-        text-shadow:
-            0.01em 0.01em 0px black,
-            -0.01em 0.01em 0px black,
-            0.01em -0.01em 0px black,
-            -0.01em -0.01em 0px black;
+        margin-block-start: 0px;
+        margin-block-end: 0px;
         white-space: nowrap;
     }
+    img{
+        height: 10vh;
+        border-radius: 50%;
+        display: inline;
+    }
+    video {
+        width: 100vw;
+        height: 100vh;
+        object-fit: contain;
+    }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/obs-websocket-js@5.0.2/dist/obs-ws.min.js"
-    integrity="sha256-h/nnsIkJJZMNu08xQJBMuUvcrgcUj1YlTYmoA0q4Ep8=" crossorigin="anonymous">
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.js" 
+    integrity="sha256-6fEA3uF0XCtisIcFZy5HTT58XocXY7LX7JUfEiK6W5Y=" 
+    crossorigin="anonymous">
+</script>
 <script type="module">
-    let access_token = ''
-    let config = {}
-    let self = {}
-    let mods = []
-    let history = []
-    const queue = []
-    const raidMarker = 'msg-param-login='
-    const dataPrefix = 'clippy.v2.'
-    const client_id = '72wtxvzs6erokrj33lk105whmoo381'
-    const searchParams = Object.fromEntries(new URLSearchParams(location.search))
-    const obsurl = searchParams['obsurl']
-    const obspassword = searchParams['obspassword']
-    const inputName = searchParams['inputName']
-    const irc = new WebSocket('wss://irc-ws.chat.twitch.tv:443')
-
-    function send(message) {
-        console.debug('< ' + message)
-        irc.send(message)
-    }
-
-    function sendChat(message) {
-        send('PRIVMSG #' + self.login + ' :' + message)
-    }
-
-    async function getUsers(...logins) {
-        const url = new URL('https://api.twitch.tv/helix/users')
-        let users = []
-        do {
-            const searchParams = new URLSearchParams()
-            for (const login of logins.splice(0, 100)) {
-                searchParams.append('login', login)
-            }
-            url.search = searchParams
-            const response = await fetch(url, { headers: getAuthHeaders() })
-            const json = await response.json()
-            users = users.concat(json['data'])
-        } while (logins.length != 0)
-        return users
-    }
-
-    async function getChannel(broadcaster_id) {
-        const url = new URL('https://api.twitch.tv/helix/channels')
-        url.search = new URLSearchParams({ broadcaster_id: broadcaster_id })
-        const response = await fetch(url, { headers: getAuthHeaders() })
-        const json = await response.json()
-        return json.data[0]
-    }
-
-    async function getClips(broadcaster_id) {
-        const url = new URL('https://api.twitch.tv/helix/clips');
-        url.search = new URLSearchParams({
-            broadcaster_id: broadcaster_id,
-            first: config.first
-        })
-        const response = await fetch(url, { headers: getAuthHeaders() })
-        const json = await response.json()
-        return json['data']
-    }
-
-    function tryFilter(clips, filter, target) {
-        let newClips = []
-        switch (filter.type) {
-            case 'history':
-                newClips = clips.filter(clip => !history.includes(clip.id))
-                if(newClips.length==0){
-                    let index=-1
-                    for(const clip of clips){
-                        if(history.indexOf(clip.id)>index){
-                            index=history.indexOf(clip.id)
-                        }
-                    }
-                    history.splice(index,1)
-                    newClips = clips.filter(clip => !history.includes(clip.id))
-                }
-                break
-            case 'category':
-                let game_id = 0
-                switch (filter.mode) {
-                    case 'self':
-                        game_id = self.game_id
-                        break
-                    case 'target':
-                        game_id = target.game_id
-                        break
-                }
-                newClips = clips.filter(clip => clip.game_id = game_id)
-                break
-            case 'length':
-                newClips = clips.filter(clip => clip.duration <= filter.time)
-                break
-            case 'single':
-                switch (filter.mode) {
-                    case 'views':
-                        let view_count = 0
-                        for (const clip of clips) {
-                            if (clip.view_count > view_count) {
-                                view_count = clip.view_count
-                            }
-                        }
-                        clips = clips.filter(clip => clip.view_count >= view_count)
-                    case 'random':
-                        const index = Math.floor(Math.random() * clips.length)
-                        newClips.push(clips[index])
-                        break
-                }
-                break
-        }
-        if (newClips.length == 0) {
-            return clips
-        } else {
-            return newClips
-        }
-    }
-
-    function getVideoURL(clip) {
-        return clip.thumbnail_url.replaceAll(/-preview-.*/g, '.mp4')
-    }
-
-    function parseVars(string, vars) {
-        for (const [key, val] of Object.entries(vars)) {
-            string = string.replaceAll(key, val)
+    const config_name=new URLSearchParams(location.search).get('name')
+    const localStorage=localforage.createInstance({name:'clippy.v2'})
+    const video=document.querySelector('video')
+    const img=document.querySelector('img')
+    const header=document.querySelector('h1')
+    const footer=document.querySelector('h2')
+    const body=document.querySelector('body')
+    const maxFontSize=parseInt(getComputedStyle(header).fontSize)
+    const auth_headers={}
+    const queue=[]
+    let mods=[]
+    let cut=undefined
+    let config=undefined
+    let irc=undefined
+    let broadcaster=undefined
+    import fontScale from '../js-util/fontScale.mjs'
+    import loadAsset from '../js-util/AssetLoader.mjs'
+    import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
+    // fill variables in a string using bash variable notation
+    function fillVars(string,vars,prefix='$'){
+        for(const [key,val] of Object.entries(vars)){
+            string=string.replaceAll(prefix+key,val)
         }
         return string
     }
-
-    function cut() {
-        document.querySelector('video').pause()
-    }
-
-    function fitText(element, maxPercent) {
-        element.style.fontSize = maxPercent + 'vh'
-        let size = parseInt(getComputedStyle(element).fontSize)
-        element.style.fontSize = size + 'px'
-        while (element.scrollWidth > innerWidth) {
-            size -= 1
-            element.style.fontSize = size + 'px'
+    // load the next clip from the queue
+    async function loadNextClip(){
+        const clip=queue.shift()
+        console.debug(clip)
+        if('headerImg' in config){
+            img.src=clip.profile_image_url
         }
-        return size
-    }
-
-    async function loadNext() {
-        document.querySelector('body').classList.remove('playing')
-        const clip = queue.shift()
-        const src = getVideoURL(clip)
-        const header = parseVars(config.header, clip)
-        const footer = parseVars(config.footer, clip)
-        document.querySelector('img').src = clip.profile_image_url
-        document.querySelector('img').style.height=10+'vh'
-        document.querySelector('span').innerText = header
-        document.querySelector('img').style.height=fitText(document.querySelector('header'), 10)
-        document.querySelector('footer').innerText = footer
-        fitText(document.querySelector('footer'), 5)
-        document.querySelector('video').src = src
-        if (config.cut) {
-            setTimeout(cut, config.time)
+        if('header' in config){
+            header.innerHTML=fillVars(config.headerText,clip)
+            await fontScale(header,maxFontSize)
         }
+        if('footer' in config){
+            footer.innerHTML=fillVars(config.footerText,clip)
+            await fontScale(footer,maxFontSize)
+        }
+        video.src=clip.video_url
     }
-
-    document.querySelector('video').onended = loadNext
-    document.querySelector('video').onpause = loadNext
-    document.querySelector('video').onplay = () => document.querySelector('body').classList.add('playing')
-
-    async function shoutout(target) {
-        Object.assign(self, await getChannel(self.id))
-        getUsers(target).then(async function onGetTarget(users) {
-            target = users[0]
-            const channel = await getChannel(target.id)
-            Object.assign(target, channel)
-            if (config.messageOn) {
-                let message = config.message
-                message=parseVars(message,target)
-                sendChat(message)
+    // apply a clip filter
+    function applyFilter(filter,clips,target){
+        //TODO
+        return clips
+    }
+    // send a raw irc message
+    window.IRCSend=function(message){
+        console.debug('< '+message)
+        irc.send(message)
+    }
+    // send a chat message in the broadcaster's channel
+    window.IRCSendChat=function(message){
+        IRCSend('PRIVMSG #' + broadcaster.login + ' :' + message)
+    }
+    // play one or more clips from one or more twitch channels
+    window.shoutout=async function(...targets){
+        console.debug('shoutout',targets)
+        for(let target of targets){
+            if(target[0]==='@'){
+                target=target.substring(1)
             }
-            getClips(target.id).then(clips => {
-                for (const filter of config.filters) {
-                    clips = tryFilter(clips, filter, target)
-                }
-                for (const clip of clips) {
-                    queue.push(Object.assign(target, clip))
-                    history.push(clip.id)
-                    if (config.keepHistory) {
-                        obs.call('SetPersistentData', {
-                            realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
-                            slotName: dataPrefix + inputName + '.history',
-                            slotValue: history
-                        })
-                    }
-                }
-                if (document.querySelector('video').paused) {
-                    loadNext()
-                }
+            target=target.toLowerCase()
+            const url=new URL('https://api.twitch.tv/helix/users')
+            url.search=new URLSearchParams({
+                'login':target
             })
-        })
-    }
-
-    window.shoutout = shoutout
-    window.sendChat = sendChat
-
-    irc.onmessage = async function onMessage(event) {
-        console.debug('> ' + event.data)
-        for (const message of event.data.split('\r\n').filter(message => message != '')) {
-
-            if (message.startsWith('PING')) {
-                send('PONG' + message.substring(4))
-                continue
-            }
-
-            if (config.autoso && message.includes(raidMarker)) {
-                const startIndex = message.indexOf(raidMarker) + raidMarker.length
-                const raider = message.substring(startIndex).split(';')[0]
-                console.debug('!', 'raid', raider)
-                if (!config.messageOn) {
-                    sendChat(config.commands[0])
+            return fetch(url,{headers:auth_headers})
+            .then(async function(response){
+                const json=await response.json()
+                target=json.data[0]
+                if('message' in config){
+                    IRCSendChat(fillVars(config.messageText,target))
                 }
-                shoutout(raider)
-            }
-
-            for (const command of config.commands) {
-                if (message.includes(command)) {
-                    const user = message.substring(message.indexOf(':') + 1, message.indexOf('!'))
-                    if (!mods.includes(user)) {
-                        continue
-                    }
-                    const target = message.substring(message.lastIndexOf(command) + command.length).trim();
-                    if(target[0]=='@'){
-                        target=target.substring(1)
-                    }
-                    shoutout(target)
-                }
-            }
-        }
-    }
-
-    const obs = new OBSWebSocket()
-
-    function getAuthHeaders() {
-        return {
-            'Authorization': 'Bearer ' + access_token,
-            'Client-Id': client_id
-        }
-    }
-
-    async function getModerators(broadcaster_id) {
-        const url = new URL('https://api.twitch.tv/helix/moderation/moderators')
-        url.search = new URLSearchParams({
-            broadcaster_id: self.id,
-            first: 100
-        })
-        let response = await fetch(url, { headers: getAuthHeaders() })
-        let json = await response.json()
-        const moderators = []
-        for (const moderator of json['data']) {
-            moderators.push(moderator['user_login'])
-        }
-        while (json['pagination']['cursor']) {
-            url.search = new URLSearchParams({
-                broadcaster_id: self.id,
-                first: 100,
-                after: json['pagination']['cursor']
-            })
-            response = await fetch(url, { headers: getAuthHeaders() })
-            json = await response.json()
-            for (const moderator of json['data']) {
-                moderators.push(moderator['user_login'])
-            }
-        }
-        return moderators
-    }
-
-    async function getMods() {
-        const newMods = await getModerators(self.id)
-        newMods.unshift(self.login)
-        for (const mod of newMods) {
-            if (!mods.includes(mod)) {
-                console.log('!', 'mod added:', mod)
-            }
-        }
-        for (const mod of mods) {
-            if (!newMods.includes(mod)) {
-                console.log('!', 'mod removed:', mod)
-            }
-        }
-        mods = newMods
-    }
-
-    obs.addListener('ConnectionClosed', async function onConnectionClosed() {
-        obs.connect(obsurl, obspassword)
-    })
-    obs.addListener('Identified', async function onIdentified() {
-        obs.call('GetPersistentData', {
-            realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
-            slotName: dataPrefix + 'access_token'
-        }).then(async function onGetAccessToken(response) {
-            access_token = response.slotValue
-            return getUsers()
-        }).then(async function onGetSelf(response) {
-            self = response[0]
-            console.debug(self)
-            document.querySelector('img').src=self.profile_image_url
-            getMods()
-            setInterval(getMods, 1000)
-            irc.onopen = async function onOpen() {
-                irc.send('CAP REQ :twitch.tv/tags')
-                irc.send('PASS oauth:' + access_token)
-                irc.send('NICK ' + self['login'])
-                irc.send('JOIN #' + self['login'])
-            }
-            if (irc.readyState == irc.OPEN) {
-                irc.onopen()
-            }
-            return obs.call('GetPersistentData', {
-                realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
-                slotName: dataPrefix + inputName
-            })
-        }).then(async function onGetConfig(response) {
-            config = response.slotValue
-            console.debug(config)
-            if (config.keepHistory) {
-                obs.call('GetPersistentData', {
-                    realm: 'OBS_WEBSOCKET_DATA_REALM_GLOBAL',
-                    slotName: dataPrefix + inputName+'.history'
-                }).then(response=>history=response.slotValue || [])
-            }
-            for(let [id,data] of Object.entries(config.assets)){
-                fetch(data).then(response=>response.blob()).then(async(blob)=>{
-                    switch(true){
-                        case blob.type=='text/css':{
-                            const css=document.createElement('style')
-                            css.id=id
-                            css.innerText=await blob.text()
-                            document.querySelector('body').appendChild(css)
-                            break
-                        }
-                    }
+                const url=new URL('https://api.twitch.tv/helix/clips')
+                url.search=new URLSearchParams({
+                    'broadcaster_id':target.id,
+                    'first':config.first
                 })
+                return fetch(url,{headers:auth_headers})
+            })
+            .then(async function(response){
+                const json=await response.json()
+                let clips=json.data
+                if('filters' in config){
+                    for(const filter of config.filters){
+                        clips=applyFilter(filter,clips,target)
+                    }
+                }
+                for(const clip of clips){
+                    clip.profile_image_url=target.profile_image_url
+                    clip.video_url=clip.thumbnail_url.replace(/-preview-.*/g,'.mp4')
+                }
+                queue.push(...clips)
+                if(video.src==''){
+                    loadNextClip()
+                }
+                return clips
+            })
+        }
+    }
+    video.onended=function(){
+        video.src=''
+        body.style.opacity=0
+        try {
+            loadNextClip()
+        } catch {
+            if('auto' in config){
+                shoutout(broadcaster.login)
             }
+        }
+    }
+    video.onplay=function(){
+        body.style.opacity=1
+        if(cut!==undefined){
+            setTimeout(video.onended)
+        }
+    }
+    // read config
+    config=await localStorage.getItem(config_name)
+    if(config===undefined){
+        config=JSON.parse(decodeURIComponent(location.hash.substring(1)))
+        localStorage.setItem(config_name,config)
+    }
+    // read access_token after returning from js-util/auth-return
+    config.access_token=new URLSearchParams(location.hash.substring(1)).get('access_token') || config.access_token
+    console.debug(config)
+    // verify access_token
+    fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+config.access_token}})
+    // populate auth_header from response, and use it to get broadcaster info
+    .then(async function(response){
+        const json=await response.json()
+        auth_headers['Authorization']='Bearer '+config.access_token
+        auth_headers['Client-Id']=json.client_id
+        return fetch('https://api.twitch.tv/helix/users',{headers:auth_headers})
+    })
+    // store broadcaster info and set up IRC
+    .then(async function(response){
+        const json=await response.json()
+        broadcaster=json.data[0]
+        irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
+        irc.onopen=function(){
+            IRCSend('PASS oauth:' + config.access_token)
+            IRCSend('NICK ' + broadcaster.login)
+            IRCSend('JOIN #' + broadcaster.login)
+            IRCSend('CAP REQ :twitch.tv/tags')
+        }
+        irc.onerror=function(error){
+            alert('Clippy lost connectuon to twitch, please reload: '+error)
+            throw error
+        }
+        irc.onclose=irc.onerror
+        irc.onmessage=function(event){
+            console.debug('> '+event.data)
+            for(const message of event.data.split('\r\n')){
+                if(message==''){
+                    continue
+                }
+                const [tags,prefix,data] = message.split(':')
+                //console.debug(tags,prefix,data)
+                if(tags=='PING '){
+                    return IRCSend('PONG :'+prefix)
+                }
+                if('auto' in config && tags.includes('msg-id=raid')){
+                    return shoutout(new URLSearchParams(tags.replaceAll(';',',')).get('msm-param-login'))
+                }
+                if(data==undefined){
+                    continue
+                }
+                if('command' in config && config.commands.includes(data.split(' ')[0]) && ( tags.includes('badges=broadcaster') || tags.includes('mod=1'))){
+                    const targets=data.split(' ')
+                    targets.shift()
+                    return shoutout(...targets)
+                }
+            }
+        }
+    })
+    // get a new access token if previous steps fail
+    .catch(function(error){
+        alert('An error ocurred during clippy startup: '+error)
+        if(!confirm('Would you like clippy to try getting a new access token? Choose Cancel/No if this message repeats itself, and make an issue report instead.')){
+            throw error
+        }
+        const auth_url=new URL('https://id.twitch.tv/oauth2/authorize')
+        auth_url.search=new URLSearchParams({
+            'client_id':'72wtxvzs6erokrj33lk105whmoo381',
+            'response_type':'token',
+            'scope':'chat:read chat:edit moderation:read'
+        }).toString()+'&redirect_uri=https://sugoidogo.github.io/js-util/auth-return.html'
+        const url=new URL('https://sugoidogo.github.io/js-util/auth-return.html')
+        url.search=new URLSearchParams({
+            'redirect_uri':location.origin+location.pathname+location.search,
+            'target':auth_url.href
         })
+        location.assign(url)
     })
 
-    obs.connect(obsurl, obspassword)
+    if('assets' in config){
+        for(let [name,url] of Object.entries(config.assets)){
+            if(!url.startsWith('data:')){
+                url=(await FileReaderAsync.readAs('DataURL',(await(await fetch(url)).blob())))
+            }
+            loadAsset(url,name).then(function(asset){
+                if(asset instanceof HTMLScriptElement){
+                    asset.type='module'
+                }
+                if(asset instanceof HTMLElement){
+                    return body.appendChild(asset)
+                }
+                if(asset instanceof FontFace){
+                    return document.fonts.add(asset)
+                }
+                return window[name]=asset
+            })
+        }
+    }
+
+    header.hidden=!'header' in config
+    img.hidden=!'headerImg' in config
+    footer.hidden=!'footer' in config
+
 </script>

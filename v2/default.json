@@ -1,0 +1,29 @@
+{
+    "command": true,
+    "commands": [
+        "!clippy",
+        "!shoutout",
+        "!so"
+    ],
+    "message": true,
+    "messageText": "Check Out $display_name: $description https://twitch.tv/$login",
+    "header": true,
+    "headerText": "Check Out $broadcaster_name",
+    "headerImg": true,
+    "footer": true,
+    "footerText": "\"$title\" by $creator_name",
+    "first": "100",
+    "filters": [
+        {
+            "type": "history",
+            "keepHistory": true
+        },
+        {
+            "type": "single",
+            "mode": "views"
+        }
+    ],
+    "assets":{
+        "defaultCSS":"../css/default-v2.css"
+    }
+}

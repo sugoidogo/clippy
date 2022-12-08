@@ -3,7 +3,7 @@
     src: url('Twitchy.TV.otf');
 }
 
-span,footer {
+* {
     font-family: twitch;
     color: white;
     text-shadow: none;
@@ -18,8 +18,5 @@ span,footer {
         drop-shadow(0.05em 0.05em 0px blueviolet)
         drop-shadow(0.06em 0.06em 0px blueviolet)
     ;
-}
-
-header {
     margin-top: -1.15em;
 }
