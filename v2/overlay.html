@@ -74,7 +74,7 @@
     import fontScale from '../js-util/fontScale.mjs'
     import loadAsset from '../js-util/AssetLoader.mjs'
     import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
-    import getUserChannelInfo from './getUserChannelInfo.js'
+    //import getUserChannelInfo from './getUserChannelInfo.js'
     // fill variables in a string using bash variable notation
     function fillVars(string,vars,prefix='$'){
         for(const [key,val] of Object.entries(vars)){
@@ -173,6 +173,30 @@
             return newClips
         }
     }
+    // collect user and channel vars
+    function getUserChannelInfo(login=undefined){
+        let userChannelInfo={}
+        let url=new URL('https://api.twitch.tv/helix/users')
+        if(login){
+            url.searchParams.append('login',login)
+        }
+        return fetch(url,{headers:auth_headers})
+        .then((response)=>response.json())
+        .then(function(json){
+            userChannelInfo=json.data[0]
+            url=new URL('https://api.twitch.tv/helix/channels')
+            url.searchParams.append('broadcaster_id',userChannelInfo.id)
+            return fetch(url,{headers:auth_headers})
+        }).then((response)=>response.json())
+        .then(function(json){
+            const channelInfo=json.data[0]
+            userChannelInfo.game_id=channelInfo.game_id
+            userChannelInfo.game_name=channelInfo.game_name
+            userChannelInfo.title=channelInfo.title
+            userChannelInfo.delay=channelInfo.delay
+            return userChannelInfo
+        })
+    }
     // send a raw irc message
     window.IRCSend=function(message){
         console.debug('< '+message)
@@ -235,7 +259,8 @@
     }
     // read config
     config=await localStorage.getItem(config_name)
-    if(config===undefined){
+    console.debug(config)
+    if(config===null){
         config=JSON.parse(decodeURIComponent(location.hash.substring(1)))
         localStorage.setItem(config_name,config)
     }
