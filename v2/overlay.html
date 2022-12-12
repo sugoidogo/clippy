@@ -110,7 +110,7 @@
         video.src=clip.video_url
         history.push(clip.id)
         if(keepHistory){
-            window.localStorage.setItem('history',history)
+            window.localStorage.setItem('history',JSON.stringify(history))
         }
     }
     // apply a clip filter
@@ -120,6 +120,7 @@
             case 'history':
                 if('keepHistory' in filter){
                     keepHistory=true
+                    history=JSON.parse(window.localStorage.getItem('history')) || []
                 }
                 newClips = clips.filter(clip => !history.includes(clip.id))
                 if(newClips.length==0){
