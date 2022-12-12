@@ -120,7 +120,10 @@
             case 'history':
                 if('keepHistory' in filter){
                     keepHistory=true
-                    history=JSON.parse(window.localStorage.getItem('history')) || []
+                    history=JSON.parse(window.localStorage.getItem('history'))
+                    if(!(history instanceof Array)){
+                        history=[]
+                    }
                 }
                 newClips = clips.filter(clip => !history.includes(clip.id))
                 if(newClips.length==0){
