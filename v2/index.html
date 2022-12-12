@@ -443,14 +443,21 @@
     }
     const access_token=document.querySelector('[name=access_token]')
     access_token.value=hash_params.get('access_token')
-    twitch_status.innerHTML='Verifying token...'
-    fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+access_token.value}})
-    .then((response)=>response.json())
-    .then(function(json){
-        twitch_status.innerHTML='Twitch Authorization expires in '+Math.floor(json.expires_in / (3600*24))+' days'
-
-    }).catch(error=>{
+    if(access_token==null){
         twitch_status.innerHTML='Not Authorized with Twitch'
-        console.warn(error)
-    })
+    }else{
+        twitch_status.innerHTML='Verifying token...'
+        fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+access_token.value}})
+        .then((response)=>response.json())
+        .then(function(json){
+            if(!json.expires_in){
+                throw 'invalid token'
+            }
+            twitch_status.innerHTML='Twitch Authorization expires in '+Math.floor(json.expires_in / (3600*24))+' days'
+
+        }).catch(error=>{
+            twitch_status.innerHTML='Not Authorized with Twitch'
+            console.warn(error)
+        })
+    }
 </script>
