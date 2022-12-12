@@ -6,7 +6,7 @@
         "!so"
     ],
     "message": true,
-    "messageText": "Check Out $display_name: $description https://twitch.tv/$login",
+    "messageText": "Check Out $display_name: $description (Last seen streaming $game_name at https://twitch.tv/$login)",
     "header": true,
     "headerText": "Check Out $broadcaster_name",
     "headerImg": true,
@@ -23,7 +23,10 @@
             "mode": "views"
         }
     ],
-    "assets":{
-        "defaultCSS":"../css/default-v2.css"
-    }
+    "assets":[
+        {
+            "filename":"defaultCSS",
+            "data":"../css/default-v2.css"
+        }
+    ]
 }

@@ -28,6 +28,9 @@
         display: flex;
         align-items: center;
     }
+    footer{
+        justify-content: center;
+    }
     h1,h2 {
         font-size: 10vh;
         margin-block-start: 0px;
@@ -61,13 +64,17 @@
     const auth_headers={}
     const queue=[]
     let mods=[]
-    let cut=undefined
+    let history=[]
     let config=undefined
     let irc=undefined
     let broadcaster=undefined
+    let cut=undefined
+    let keepHistory=undefined
+    let tid=undefined
     import fontScale from '../js-util/fontScale.mjs'
     import loadAsset from '../js-util/AssetLoader.mjs'
     import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
+    import getUserChannelInfo from './getUserChannelInfo.js'
     // fill variables in a string using bash variable notation
     function fillVars(string,vars,prefix='$'){
         for(const [key,val] of Object.entries(vars)){
@@ -77,7 +84,17 @@
     }
     // load the next clip from the queue
     async function loadNextClip(){
+        clearTimeout(tid)
         const clip=queue.shift()
+        if(clip==undefined){
+            if('auto' in config){
+                shoutout(broadcaster.login)
+            }else{        
+                video.pause()
+                body.style.opacity=0
+            }
+            return
+        }
         console.debug(clip)
         if('headerImg' in config){
             img.src=clip.profile_image_url
@@ -91,11 +108,70 @@
             await fontScale(footer,maxFontSize)
         }
         video.src=clip.video_url
+        history.push(clip.id)
+        if(keepHistory){
+            window.localStorage.setItem('history',history)
+        }
     }
     // apply a clip filter
-    function applyFilter(filter,clips,target){
-        //TODO
-        return clips
+    function applyFilter(clips, filter, target) {
+        let newClips = []
+        switch (filter.type) {
+            case 'history':
+                if('keepHistory' in filter){
+                    keepHistory=true
+                }
+                newClips = clips.filter(clip => !history.includes(clip.id))
+                if(newClips.length==0){
+                    let index=-1
+                    for(const clip of clips){
+                        if(history.indexOf(clip.id)>index){
+                            index=history.indexOf(clip.id)
+                        }
+                    }
+                    history.splice(index,1)
+                    newClips = clips.filter(clip => !history.includes(clip.id))
+                }
+                break
+            case 'category':
+                let game_id = 0
+                switch (filter.mode) {
+                    case 'self':
+                        game_id = broadcaster.game_id
+                        break
+                    case 'target':
+                        game_id = target.game_id
+                        break
+                }
+                newClips = clips.filter(clip => clip.game_id == game_id)
+                break
+            case 'duration':
+                cut=filter.cut
+                newClips = clips.filter(clip => filter.min <= clip.duration <= filter.max)
+                break
+            case 'single':
+                switch (filter.mode) {
+                    case 'views':
+                        let view_count = 0
+                        for (const clip of clips) {
+                            if (clip.view_count > view_count) {
+                                view_count = clip.view_count
+                            }
+                        }
+                        clips = clips.filter(clip => clip.view_count >= view_count)
+                    case 'random':
+                        const index = Math.floor(Math.random() * clips.length)
+                        newClips.push(clips[index])
+                        break
+                }
+                break
+        }
+        console.debug('filter result:',filter.type,newClips)
+        if (newClips.length == 0) {
+            return clips
+        } else {
+            return newClips
+        }
     }
     // send a raw irc message
     window.IRCSend=function(message){
@@ -109,19 +185,15 @@
     // play one or more clips from one or more twitch channels
     window.shoutout=async function(...targets){
         console.debug('shoutout',targets)
+        broadcaster=await getUserChannelInfo()
         for(let target of targets){
             if(target[0]==='@'){
                 target=target.substring(1)
             }
             target=target.toLowerCase()
-            const url=new URL('https://api.twitch.tv/helix/users')
-            url.search=new URLSearchParams({
-                'login':target
-            })
-            return fetch(url,{headers:auth_headers})
-            .then(async function(response){
-                const json=await response.json()
-                target=json.data[0]
+            return getUserChannelInfo(target)
+            .then(async function(userChannelInfo){
+                target=userChannelInfo
                 if('message' in config){
                     IRCSendChat(fillVars(config.messageText,target))
                 }
@@ -137,7 +209,7 @@
                 let clips=json.data
                 if('filters' in config){
                     for(const filter of config.filters){
-                        clips=applyFilter(filter,clips,target)
+                        clips=applyFilter(clips,filter,target)
                     }
                 }
                 for(const clip of clips){
@@ -145,28 +217,20 @@
                     clip.video_url=clip.thumbnail_url.replace(/-preview-.*/g,'.mp4')
                 }
                 queue.push(...clips)
-                if(video.src==''){
+                console.debug(video.src)
+                if(video.paused){
                     loadNextClip()
                 }
                 return clips
             })
         }
     }
-    video.onended=function(){
-        video.src=''
-        body.style.opacity=0
-        try {
-            loadNextClip()
-        } catch {
-            if('auto' in config){
-                shoutout(broadcaster.login)
-            }
-        }
-    }
+    video.onended=loadNextClip
     video.onplay=function(){
         body.style.opacity=1
-        if(cut!==undefined){
-            setTimeout(video.onended)
+        if(cut){
+            console.debug('cut',cut)
+            tid=setTimeout(video.onended,cut*1000)
         }
     }
     // read config
@@ -174,6 +238,11 @@
     if(config===undefined){
         config=JSON.parse(decodeURIComponent(location.hash.substring(1)))
         localStorage.setItem(config_name,config)
+    }
+    for(const list_name of ['commands','assets','filters']){
+        if(!(config[list_name] instanceof Array)){
+            config[list_name]=[config[list_name]]
+        }
     }
     // read access_token after returning from js-util/auth-return
     config.access_token=new URLSearchParams(location.hash.substring(1)).get('access_token') || config.access_token
@@ -191,15 +260,19 @@
     .then(async function(response){
         const json=await response.json()
         broadcaster=json.data[0]
+        img.src=broadcaster.profile_image_url
         irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
         irc.onopen=function(){
             IRCSend('PASS oauth:' + config.access_token)
             IRCSend('NICK ' + broadcaster.login)
             IRCSend('JOIN #' + broadcaster.login)
-            IRCSend('CAP REQ :twitch.tv/tags')
+            IRCSend('CAP REQ :twitch.tv/tags')    
+            if('auto' in config){
+                shoutout(broadcaster.login)
+            }
         }
         irc.onerror=function(error){
-            alert('Clippy lost connectuon to twitch, please reload: '+error)
+            alert('Clippy lost connectuon to twitch, please reload. Error '+error.code+': '+JSON.stringify(error))
             throw error
         }
         irc.onclose=irc.onerror
@@ -230,8 +303,8 @@
     })
     // get a new access token if previous steps fail
     .catch(function(error){
-        alert('An error ocurred during clippy startup: '+error)
-        if(!confirm('Would you like clippy to try getting a new access token? Choose Cancel/No if this message repeats itself, and make an issue report instead.')){
+        alert('An error ocurred during clippy startup: '+JSON.stringify(error))
+        if(!confirm('Would you like clippy to try getting a new access token? If this message repeats itself, make an issue report instead.')){
             throw error
         }
         const auth_url=new URL('https://id.twitch.tv/oauth2/authorize')
@@ -249,11 +322,11 @@
     })
 
     if('assets' in config){
-        for(let [name,url] of Object.entries(config.assets)){
-            if(!url.startsWith('data:')){
-                url=(await FileReaderAsync.readAs('DataURL',(await(await fetch(url)).blob())))
+        for(const asset of config.assets){
+            if(!asset.data.startsWith('data:')){
+                asset.data=await FileReaderAsync.readAs('DataURL',(await(await fetch(url,{cache:'no-cache'})).blob()))
             }
-            loadAsset(url,name).then(function(asset){
+            loadAsset(asset.data,asset.filename).then(function(asset){
                 if(asset instanceof HTMLScriptElement){
                     asset.type='module'
                 }

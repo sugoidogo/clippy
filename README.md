@@ -1,32 +1,14 @@
 # Clippy
 Play Twitch Clips on demand
 ## Usage
-To use, go to https://sugoidogo.github.io/clippy and authorize clippy.
+To use, go to https://sugoidogo.github.io/clippy/v2 and authorize clippy.
+Type in a name for your clippy instance and hit `Create New Instance`.
 Then adjust the settings to your liking, and click the `Copy Overlay URL` button.
-You can paste that URL into your browser source and start using the configured chat commands.
-## Settings
-The settings are listed in the order they are applied.
-Most settings are best-effort filters, which will adjust or skip themselves if no clips pass the filter.
-| Name | Description |
-|   -  |   -   |
-| Auto-play clips from my channel | Instead of waiting for chat commands, loop clips from the broadcaster's channel |
-| Automatically send the first clippy command when getting raided | Play a clip and shoutout any channel that raids you automatically |
-| Search the last # clips | The number of clips to filter through |
-| Don't use clips already played this session | Remember what clips have played and avoid re-playing them. History is reset if all clips have been played. |
-| Find clips in my category | Filters clips by whatever category you are currently streaming. |
-| Find clips in the target's category | Filter clips by whatever category the target's channel has set |
-| Max clip duration  | Clips longer than this will be filtered out. If no clips are left, the filter is re-applied using the duration of the shortest clip availible. |
-| Most Viewed  | This filter always uses the best-effort fallback to filter clips by the view count of the highest viewed clip |
-| Clip cutoff | This starts a timer when the clip starts playing that will end playback, cutting off the clip if it's too long. Make sure to use max clip duration with this setting to avoid having to cut clips. |
-## Customization
-The options in the right-side panel are for customizing the overlay to your channel.
-| Name | Description |
-| - | - |
-| Header | The text displayed above the clip |
-| Custom CSS URI | Load css from the internet. Press the "Load CSS" button to use. |
-| Custom CSS File | Same as above, but load from file instead of URL |
-| Send a message in chat | Send a message as soon as a valid shoutout target is found |
-
-Clippy comes with a custom CSS file to get you started, baed on the [Twitchy TV Font by MaxiGamer](https://www.deviantart.com/maxigamer/art/Twitchy-TV-FONT-594450410). Just hit "Load CSS" to use it.
+That url contains all your settings for the selected instance of clippy.
+Use it as a browser source in obs or any other streaming software.
 ## Support
 Support information for all my software is on my [GitHub profile](https://github.com/sugoidogo)
+## Variables
+In the `Behavior` section, you'll notice the default values have things like `$display_name` or `$title`.
+These are variables, and clippy has a dynamic variable system that lets you use any if the info the twitch api is sending clippy.
+The full list of variables, as pulled from your own twitch account, are viewable [here](v2/vars.html).

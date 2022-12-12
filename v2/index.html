@@ -12,65 +12,77 @@
 <form id="config_span" hidden>
     <input type="hidden" name="access_token">
     <button type="button" id="delete_config_button">delete</button>
-    <h2>Activation</h2>
-    <label>
-        <input type="checkbox" name="auto">
-        auto-play my clips
-        <br>
-    </label>
-    <label>
-        <input type="checkbox" name="raid">
-        on raid
-        <br>
-    </label>
-    <label>
-        <input type="checkbox" name="command">
-        on chat command
-        <br>
-    </label>
-    <h3>Commands</h3>
-    <input type="text" id="command_text_input">
-    <button type="button" id="command_add_button">add</button>
-    <ul id="command_list"></ul>
-    <h2>Behavior</h2>
-    <label>
-        <input type="checkbox" name="message">
-        Send a message in chat <br>
-    </label>
-    <textarea name="messageText"></textarea><br>
-    <label>
-        <input type="checkbox" name="headerImg">
-        Header Image <br>
-    </label>
-    <label>
-        <input type="checkbox" name="header">
-        Header text <br>
-    </label>
-    <textarea name="headerText"></textarea><br>
-    <label>
-        <input type="checkbox" name="footer">
-        Footer text <br>
-    </label>
-    <textarea name="footerText"></textarea><br>
-    <h2>Filters</h2>
-    <label>
-        Search the last
-        <input type="number" min="1" max="100" value="20" name="first">
-        clips
-        <br>
-    </label>
-    <select id="filter_select">
-        <option value="duration">filter by clip length</option>
-        <option value="category">filter by clip category</option>
-        <option value="history">avoid replaying clips</option>
-        <option value="single">pick a single clip</option>
-    </select>
-    <button id="filter_add_button">add</button>
-    <br>
-    <ol id="filter_list"></ol>
-    <h2>Assets</h2>
-    <input type="file" multiple id="asset_file_input"><br>
-    <ul id="asset_list"></ul>
+    <table>
+        <tr>
+            <td>
+                <h2>Activation</h2>
+                <label>
+                    <input type="checkbox" name="auto">
+                    auto-play my clips
+                    <br>
+                </label>
+                <label>
+                    <input type="checkbox" name="raid">
+                    on raid
+                    <br>
+                </label>
+                <label>
+                    <input type="checkbox" name="command">
+                    on chat command
+                    <br>
+                </label>
+                <h3>Commands</h3>
+                <input type="text" id="command_text_input">
+                <button type="button" id="command_add_button">add</button>
+                <ul id="command_list"></ul>
+            </td>
+            <td>
+                <h2>Behavior</h2>
+                <label>
+                    <input type="checkbox" name="message">
+                    Send a message in chat <br>
+                </label>
+                <textarea name="messageText"></textarea><br>
+                <label>
+                    <input type="checkbox" name="headerImg">
+                    Header Image <br>
+                </label>
+                <label>
+                    <input type="checkbox" name="header">
+                    Header text <br>
+                </label>
+                <textarea name="headerText"></textarea><br>
+                <label>
+                    <input type="checkbox" name="footer">
+                    Footer text <br>
+                </label>
+                <textarea name="footerText"></textarea><br>
+            </td>
+            <td>
+                <h2>Filters</h2>
+                <label>
+                    Search the last
+                    <input type="number" min="1" max="100" value="20" name="first">
+                    clips
+                    <br>
+                </label>
+                <select id="filter_select">
+                    <option value="duration">filter by clip length</option>
+                    <option value="category">filter by clip category</option>
+                    <option value="history">avoid replaying clips</option>
+                    <option value="single">pick a single clip</option>
+                </select>
+                <button id="filter_add_button">add</button>
+                <br>
+                <ol id="filter_list"></ol>
+            </td>
+            <td>
+                <h2>Assets</h2>
+                <input type="file" multiple id="asset_file_input"><br>
+                <ul id="asset_list"></ul>
+            </td>
+        </tr>
+    </table>
     <button type="submit">Copy URL</button>
 </form>
 
@@ -130,7 +142,7 @@
     <li class="asset_list_item">
         <form name="assets">
             <button type="button" onclick="this.parentElement.parentElement.remove()">remove</button>
-            <input type="text" name="name" class="asset_name">
+            <input type="text" name="filename" class="asset_name">
             <span class="asset_type"></span>
             <input type="hidden" name="data" class="asset_data">
         </form>
@@ -148,6 +160,7 @@
 
     textarea {
         width: 300px;
+        height: 5em;
     }
 
     li[draggable=true]{
@@ -165,6 +178,11 @@
         margin-top: 1em;
         margin-bottom: 1em;
     }
+
+    td {
+        vertical-align: top;
+        border: 1px solid lightgray;
+    }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"
@@ -176,16 +194,16 @@
     import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
     const asset_file_input = document.querySelector('#asset_file_input')
     const asset_list = document.querySelector('#asset_list')
-    async function addAsset(blob, name = null) {
-        if (name === null) {
-            name = blob.name.split('.')[0]
+    async function addAsset(blob, filename = null) {
+        if (filename === null) {
+            filename = blob.name.split('.')[0]
         }
         const asset = templates.querySelector('.asset_list_item').cloneNode(true)
         console.debug(asset.outerHTML)
         const asset_name = asset.querySelector('.asset_name')
         const asset_type = asset.querySelector('.asset_type')
         const asset_data = asset.querySelector('.asset_data')
-        asset_name.value = name
+        asset_name.value = filename
         asset_type.innerHTML = blob.type
         asset_data.value = await FileReaderAsync.readAs('DataURL',blob)
         asset_list.append(asset)
@@ -258,9 +276,14 @@
             status.hidden = false
             new_config_span.hidden = true
         }
+        for(const list of [asset_list,command_list,filter_list]){
+            while (list.hasChildNodes()) {
+                list.childNodes[0].remove()
+            }
+        }
         const config = await localStorage.getItem(config_select.value)
         console.debug(config)
-        for (const [key, value] of Object.entries(config)) {
+        for (let [key, value] of Object.entries(config)) {
             console.debug(key, typeof value, value)
             switch (typeof value) {
                 case 'boolean': {
@@ -273,20 +296,17 @@
                     continue
                 }
                 case 'object': {
+                    if(!(value instanceof Array)){
+                        value=[value]
+                    }
                     switch (key) {
                         case 'commands': {
-                            while (command_list.hasChildNodes()) {
-                                command_list.childNodes[0].remove()
-                            }
                             for (const command of value) {
                                 addCommand(command)
                             }
                             continue
                         }
                         case 'filters': {
-                            while (filter_list.hasChildNodes()) {
-                                filter_list.childNodes[0].remove()
-                            }
                             for (const filter of value) {
                                 filter_select.value = filter.type
                                 const filter_list_item = filter_add_button.onclick()
@@ -309,17 +329,12 @@
                             }
                             break
                         }
-                        /**
                         case 'assets': {
-                            while (asset_tbody.hasChildNodes()) {
-                                asset_tbody.childNodes[0].remove()
-                            }
                             for (const asset of value) {
-                                const data = await deserializeBlob(asset.data)
-                                addAsset(data, asset.name)
+                                const data=await (await fetch(asset.data,{cache:'no-cache'})).blob()
+                                addAsset(data, asset.filename)
                             }
                         }
-                        */
                     }
                 }
             }
@@ -330,7 +345,6 @@
     async function reload() {
         while (config_select.children.length != 0) {
             config_select.children[0].remove()
-            return setTimeout(reload)
         }
         for (const config_name of await localStorage.keys()) {
             const option = document.createElement('option')
@@ -348,7 +362,7 @@
     function new_config(){
         new_config_span.hidden = true
         status.hidden = false
-        fetch('default.json')
+        fetch('default.json',{cache:'no-cache'})
         .then((response) => response.json())
         .then((json) => localStorage.setItem(new_config_text_input.value, json))
         .then(() => {
@@ -361,11 +375,6 @@
     new_config_span.onsubmit = function (event) {
         event.preventDefault()
         new_config()
-    }
-    new_config_text_input.onkeydown = function (event) {
-        if (event.key === 'Enter') {
-            new_config()
-        }
     }
 
     const delete_config_button = document.querySelector('#delete_config_button')
@@ -440,5 +449,8 @@
     .then(function(json){
         twitch_status.innerHTML='Twitch Authorization expires in '+Math.floor(json.expires_in / (3600*24))+' days'
 
-    }).catch(twitch_status.innerHTML='Not Authorized with Twitch')
+    }).catch(error=>{
+        twitch_status.innerHTML='Not Authorized with Twitch'
+        console.warn(error)
+    })
 </script>
