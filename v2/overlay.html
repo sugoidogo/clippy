@@ -1,16 +1,15 @@
 <body>
     <header>
-        <img hidden>
-        <h1 hidden></h1>
+        <img>
+        <h1>Clippy is Loading</h1>
     </header>
     <video autoplay></video>
-    <footer><h2 hidden></h2></footer>
+    <footer><h2>This message should disappear shortly</h2></footer>
 </body>
 <style>
     body {
         overflow: hidden;
         margin: 0px;
-        opacity: 0;
     }
     header{
         position: absolute;
@@ -290,6 +289,12 @@
     .then(async function(response){
         const json=await response.json()
         broadcaster=json.data[0]
+        img.onload=async function(){
+            await fontScale(header)
+            await fontScale(footer)
+            body.style.opacity=0
+            img.onload=undefined
+        }
         img.src=broadcaster.profile_image_url
         irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
         irc.onopen=function(){
