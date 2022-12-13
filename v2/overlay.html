@@ -262,12 +262,13 @@
         }
     }
     // read config
-    config=await localStorage.getItem(config_name)
-    console.debug(config)
-    if(config===null){
-        config=JSON.parse(decodeURIComponent(location.hash.substring(1)))
+    try {
+        config=JSON.parse(decodeURIComponent(location.hash.substring(1))) || await localStorage.getItem(config_name)
         localStorage.setItem(config_name,config)
+    } catch {
+        config=await localStorage.getItem(config_name)
     }
+    console.debug(config)
     for(const list_name of ['commands','assets','filters']){
         if(!(config[list_name] instanceof Array)){
             config[list_name]=[config[list_name]]
