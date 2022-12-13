@@ -1,6 +1,6 @@
 @font-face {
     font-family: twitch;
-    src: url('Twitchy.TV.otf');
+    src: url('../css/Twitchy.TV.otf');
 }
 
 h1,h2 {
