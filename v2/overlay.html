@@ -267,7 +267,6 @@
     } catch {
         config=await localStorage.getItem(config_name)
     }
-    console.debug(config)
     for(const list_name of ['commands','assets','filters']){
         if(!(config[list_name] instanceof Array)){
             config[list_name]=[config[list_name]]
