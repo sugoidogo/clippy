@@ -288,13 +288,22 @@
     .then(async function(response){
         const json=await response.json()
         broadcaster=json.data[0]
-        img.onload=async function(){
-            await fontScale(header)
-            await fontScale(footer)
-            body.style.opacity=0
-            img.onload=undefined
+        if(config['img']){
+            await fetch(broadcaster.profile_image_url,{mode:'no-cors'})
+            img.src=broadcaster.profile_image_url
+        }else{
+            img.hidden=true
         }
-        img.src=broadcaster.profile_image_url
+        if(config['header']){
+            await fontScale(header)
+        }else{
+            header.hidden=true
+        }
+        if(config['footer']){
+            await fontScale(footer)
+        }else{
+            footer.hidden=true
+        }
         irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
         irc.onopen=function(){
             IRCSend('PASS oauth:' + config.access_token)
@@ -374,9 +383,5 @@
             })
         }
     }
-
-    header.hidden=!'header' in config
-    img.hidden=!'headerImg' in config
-    footer.hidden=!'footer' in config
 
 </script>
