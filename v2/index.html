@@ -281,6 +281,12 @@
                 list.childNodes[0].remove()
             }
         }
+        for(const checkbox of config_span.querySelectorAll('input[type=checkbox]')){
+            checkbox.checked=false
+        }
+        for(const textarea of config_span.querySelectorAll('textarea')){
+            textarea.value=''
+        }
         const config = await localStorage.getItem(config_select.value)
         console.debug(config)
         for (let [key, value] of Object.entries(config)) {
