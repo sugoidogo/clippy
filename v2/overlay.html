@@ -304,6 +304,7 @@
         }else{
             footer.hidden=true
         }
+        body.style.opacity=0
         irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
         irc.onopen=function(){
             IRCSend('PASS oauth:' + config.access_token)
