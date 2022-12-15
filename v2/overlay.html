@@ -316,7 +316,7 @@
             }
         }
         irc.onerror=function(error){
-            alert('Clippy lost connectuon to twitch, please reload. Error '+error.code+': '+JSON.stringify(error))
+            alert('Clippy lost connectuon to twitch, please reload. Error '+error.code+': '+Object.entries(error))
             throw error
         }
         irc.onclose=irc.onerror
@@ -347,7 +347,7 @@
     })
     // get a new access token if previous steps fail
     .catch(function(error){
-        alert('An error ocurred during clippy startup: '+JSON.stringify(error))
+        alert('An error ocurred during clippy startup: '+Object.entries(error))
         if(!confirm('Would you like clippy to try getting a new access token? If this message repeats itself, make an issue report instead.')){
             throw error
         }
