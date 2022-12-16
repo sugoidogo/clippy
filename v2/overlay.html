@@ -126,9 +126,9 @@
                 }
                 newClips = clips.filter(clip => !history.includes(clip.id))
                 if(newClips.length==0){
-                    let index=-1
+                    let index=history.length
                     for(const clip of clips){
-                        if(history.indexOf(clip.id)>index){
+                        if(history.indexOf(clip.id)<index){
                             index=history.indexOf(clip.id)
                         }
                     }
