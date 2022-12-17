@@ -370,18 +370,7 @@
             if(!asset.data.startsWith('data:')){
                 asset.data=await FileReaderAsync.readAs('DataURL',(await(await fetch(url,{cache:'no-cache'})).blob()))
             }
-            loadAsset(asset.data,asset.filename).then(function(asset){
-                if(asset instanceof HTMLScriptElement){
-                    asset.type='module'
-                }
-                if(asset instanceof HTMLElement){
-                    return body.appendChild(asset)
-                }
-                if(asset instanceof FontFace){
-                    return document.fonts.add(asset)
-                }
-                return window[name]=asset
-            })
+            loadAsset(asset.data,asset.filename,true)
         }
     }
 
