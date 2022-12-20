@@ -189,9 +189,6 @@
     }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"
-    integrity="sha256-zBaNlfuSfUaxBDcmz+E5mOCJAv9j8kMw4rsikBCe0UU=" crossorigin="anonymous">
-    </script>
 <script type="module">
     const templates = document.querySelector('#templates')
 
@@ -251,6 +248,7 @@
     }
 
     import {getFormDataDeep} from '../js-util/FormDataDeep.mjs'
+    import localforage from 'https://unpkg.com/localforage/src/localforage.js'
     const localStorage = localforage.createInstance({ name: 'clippy.v2' })
     const config_select = document.querySelector('#config_select')
     const form = document.querySelector('#config_span')
