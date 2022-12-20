@@ -47,11 +47,11 @@
         object-fit: contain;
     }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.js" 
-    integrity="sha256-6fEA3uF0XCtisIcFZy5HTT58XocXY7LX7JUfEiK6W5Y=" 
-    crossorigin="anonymous">
-</script>
 <script type="module">
+    import localforage from 'https://unpkg.com/localforage/src/localforage.js'
+    import fontScale from '../js-util/fontScale.mjs'
+    import loadAsset from '../js-util/AssetLoader.mjs'
+    import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
     const config_name=new URLSearchParams(location.search).get('name')
     const localStorage=localforage.createInstance({name:'clippy.v2'})
     const video=document.querySelector('video')
@@ -70,9 +70,6 @@
     let cut=undefined
     let keepHistory=undefined
     let tid=undefined
-    import fontScale from '../js-util/fontScale.mjs'
-    import loadAsset from '../js-util/AssetLoader.mjs'
-    import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
     //import getUserChannelInfo from './getUserChannelInfo.js'
     // fill variables in a string using bash variable notation
     function fillVars(string,vars,prefix='$'){
