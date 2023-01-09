@@ -343,7 +343,7 @@
             IRCSend('PASS oauth:' + config.access_token)
             IRCSend('NICK ' + broadcaster.login)
             IRCSend('JOIN #' + broadcaster.login)
-            IRCSend('CAP REQ :twitch.tv/tags')    
+            IRCSend('CAP REQ :twitch.tv/tags twitch.tv/commands')    
             if('auto' in config){
                 shoutout(broadcaster.login)
             }
@@ -364,8 +364,8 @@
                 if(tags=='PING '){
                     return IRCSend('PONG :'+prefix)
                 }
-                if('auto' in config && tags.includes('msg-id=raid')){
-                    return shoutout(new URLSearchParams(tags.replaceAll(';',',')).get('msm-param-login'))
+                if('raid' in config && tags.includes('msg-id=raid')){
+                    return shoutout(tags.split('msg-param-login=').at(-1).split(';')[0])
                 }
                 if(data==undefined){
                     continue
