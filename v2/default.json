@@ -12,6 +12,7 @@
     "headerImg": true,
     "footer": true,
     "footerText": "\"$title\" by $creator_name",
+    "consentText":"$display_name, you can use '$command consent' to allow your clips to be played on stream",
     "first": "100",
     "filters": [
         {

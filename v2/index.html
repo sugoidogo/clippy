@@ -57,6 +57,10 @@
                     Footer text <br>
                 </label>
                 <textarea name="footerText"></textarea><br>
+                <label>
+                    Consent message text:
+                    <textarea name="consentText"></textarea>
+                </label>
             </td>
             <td>
                 <h2>Filters</h2>
@@ -290,6 +294,9 @@
             textarea.value=''
         }
         const config = await localStorage.getItem(config_select.value)
+        if(!config.consentText){
+            config.consentText=await fetch('default.json').then(response=>response.json()).then(json=>json.consentText)
+        }
         console.debug(config)
         for (let [key, value] of Object.entries(config)) {
             console.debug(key, typeof value, value)

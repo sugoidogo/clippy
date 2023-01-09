@@ -70,6 +70,7 @@
     let cut=undefined
     let keepHistory=undefined
     let tid=undefined
+    let consent=JSON.parse(window.localStorage.getItem('consent'))||[]
     //import getUserChannelInfo from './getUserChannelInfo.js'
     // fill variables in a string using bash variable notation
     function fillVars(string,vars,prefix='$'){
@@ -194,6 +195,7 @@
             userChannelInfo.game_name=channelInfo.game_name
             userChannelInfo.title=channelInfo.title
             userChannelInfo.delay=channelInfo.delay
+            userChannelInfo.command=config.commands[0]
             return userChannelInfo
         })
     }
@@ -244,6 +246,11 @@
                 if('message' in config){
                     IRCSendChat(fillVars(config.messageText,target))
                 }
+                if(!consent.includes(target.login)){
+                    const text=fillVars(config.consentText,target)
+                    IRCSendChat(text)
+                    return false
+                }
                 const url=new URL('https://api.twitch.tv/helix/clips')
                 url.search=new URLSearchParams({
                     'broadcaster_id':target.id,
@@ -252,6 +259,9 @@
                 return fetch(url,{headers:auth_headers})
             })
             .then(async function(response){
+                if(!response){
+                    return 'user has not given consent to use their clips'
+                }
                 const json=await response.json()
                 let clips=json.data
                 if('filters' in config){
@@ -291,6 +301,9 @@
         if(!(config[list_name] instanceof Array)){
             config[list_name]=[config[list_name]]
         }
+    }
+    if(!config.consentText){
+        config.consentText=await fetch('default.json').then(response=>response.json()).then(json=>json.consentText)
     }
     // read access_token after returning from js-util/auth-return
     config.access_token=new URLSearchParams(location.hash.substring(1)).get('access_token') || config.access_token
@@ -357,10 +370,19 @@
                 if(data==undefined){
                     continue
                 }
-                if('command' in config && config.commands.includes(data.split(' ')[0]) && ( tags.includes('badges=broadcaster') || tags.includes('mod=1'))){
-                    const targets=data.split(' ')
-                    targets.shift()
-                    return shoutout(...targets)
+                if('command' in config && config.commands.includes(data.split(' ')[0])){
+                    const login=prefix.split('!')[0]
+                    console.debug(login+':'+data)
+                    if(data.split(' ')[1]=='consent'){
+                        consent.push(login)
+                        window.localStorage.setItem('consent',JSON.stringify(consent))
+                        return IRCSendChat(login+', Thank you for your consent!')
+                    }
+                    if(tags.includes('badges=broadcaster') || tags.includes('mod=1')){
+                        const targets=data.split(' ')
+                        targets.shift()
+                        return shoutout(...targets)
+                    }
                 }
             }
         }
