@@ -321,6 +321,7 @@
     .then(async function(response){
         const json=await response.json()
         broadcaster=json.data[0]
+        consent.push(broadcaster.login)
         if(config['img']){
             await fetch(broadcaster.profile_image_url,{mode:'no-cors'})
             img.src=broadcaster.profile_image_url
