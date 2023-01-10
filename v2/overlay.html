@@ -350,7 +350,7 @@
             }
         }
         irc.onerror=function(error){
-            alert('Clippy lost connectuon to twitch, please reload. Error '+error.code+': '+Object.entries(error))
+            alert('Clippy lost connection to twitch, please reload. '+error.code+" "+error.reason)
             throw error
         }
         irc.onclose=irc.onerror
