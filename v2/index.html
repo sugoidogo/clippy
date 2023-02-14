@@ -1,6 +1,10 @@
 <h1>Clippy</h1>
 <div id="status">Loading...</div>
 <div>
+    <button id="resetLocalStorage">Reset tokens</button>
+    <button id="resetLocalForage">Reset instances</button>
+</div>
+<div>
     <span id="twitch_status">Checking Twitch Token Status...</span>
     <button id="twitch_button">Get New Authorization</button>
 </div>
@@ -194,6 +198,18 @@
 </style>
 
 <script type="module">
+    const resetLocalStorageButton=document.querySelector("button#resetLocalStorage")
+    resetLocalStorageButton.onclick=function(){
+        window.localStorage.clear()
+    }
+    
+    import localforage from 'https://unpkg.com/localforage/src/localforage.js'
+    const localStorage = localforage.createInstance({ name: 'clippy.v2' })
+    const resetLocalForageButton=document.querySelector("button#resetLocalForage")
+    resetLocalForageButton.onclick=function(){
+        localStorage.clear()
+    }
+
     const templates = document.querySelector('#templates')
 
     import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
@@ -252,8 +268,6 @@
     }
 
     import {getFormDataDeep} from '../js-util/FormDataDeep.mjs'
-    import localforage from 'https://unpkg.com/localforage/src/localforage.js'
-    const localStorage = localforage.createInstance({ name: 'clippy.v2' })
     const config_select = document.querySelector('#config_select')
     const form = document.querySelector('#config_span')
     form.onsubmit = async function (event) {
