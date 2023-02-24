@@ -290,10 +290,13 @@
             tid=setTimeout(video.onended,cut*1000)
         }
     }
+    function verify(token){
+        return fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+token}})
+    }
     // read config
     try {
         config=JSON.parse(decodeURIComponent(location.hash.substring(1))) || await localStorage.getItem(config_name)
-        localStorage.setItem(config_name,config)
+        await verify(config.access_token)
     } catch {
         config=await localStorage.getItem(config_name)
     }
@@ -312,6 +315,7 @@
     fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+config.access_token}})
     // populate auth_header from response, and use it to get broadcaster info
     .then(async function(response){
+        localStorage.setItem(config_name,config)
         const json=await response.json()
         auth_headers['Authorization']='Bearer '+config.access_token
         auth_headers['Client-Id']=json.client_id
