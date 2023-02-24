@@ -308,6 +308,9 @@
     if(!config.consentText){
         config.consentText=await fetch('default.json').then(response=>response.json()).then(json=>json.consentText)
     }
+    if(config.messageText.endsWith("https://twitch.tv/$login)")){
+        config.messageText=config.messageText.replaceAll("https://twitch.tv/$login)","https://twitch.tv/$login )")
+    }
     // read access_token after returning from js-util/auth-return
     config.access_token=new URLSearchParams(location.hash.substring(1)).get('access_token') || config.access_token
     console.debug(config)
