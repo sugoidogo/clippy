@@ -201,13 +201,16 @@
     const resetLocalStorageButton=document.querySelector("button#resetLocalStorage")
     resetLocalStorageButton.onclick=function(){
         window.localStorage.clear()
+        window.location.reload()
     }
     
     import localforage from 'https://unpkg.com/localforage/src/localforage.js'
     const localStorage = localforage.createInstance({ name: 'clippy.v2' })
     const resetLocalForageButton=document.querySelector("button#resetLocalForage")
     resetLocalForageButton.onclick=function(){
+        
         localStorage.clear()
+        window.location.reload()
     }
 
     const templates = document.querySelector('#templates')
