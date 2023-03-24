@@ -363,11 +363,14 @@
         irc.onclose=irc.onerror
         irc.onmessage=function(event){
             console.debug('> '+event.data)
-            for(const message of event.data.split('\r\n')){
+            for(let message of event.data.split('\r\n')){
                 if(message==''){
                     continue
                 }
-                const [tags,prefix,data] = message.split(':')
+                message=message.split(':')
+                const tags=message.shift()
+                const prefix=message.shift()
+                const data=message.join(":")
                 //console.debug(tags,prefix,data)
                 if(tags=='PING '){
                     return IRCSend('PONG :'+prefix)
