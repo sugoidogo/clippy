@@ -6,6 +6,7 @@
 </div>
 <div>
     <span id="twitch_status">Checking Twitch Token Status...</span>
+    <b hidden id="missing_perms">You need a new token for clippy's new features!</b>
     <button id="twitch_button">Get New Authorization</button>
 </div>
 <select id="config_select" hidden></select>
@@ -42,6 +43,10 @@
             </td>
             <td>
                 <h2>Behavior</h2>
+                <label>
+                    <input type="checkbox" name="twitch_shoutout">
+                    Activate Twitch Shoutout <br>
+                </label>
                 <label>
                     <input type="checkbox" name="message">
                     Send a message in chat <br>
@@ -460,7 +465,7 @@
         auth_url.search=new URLSearchParams({
             'client_id':'72wtxvzs6erokrj33lk105whmoo381',
             'response_type':'token',
-            'scope':'chat:read chat:edit'
+            'scope':'chat:read chat:edit moderator:manage:shoutouts'
         }).toString()+'&redirect_uri=https://sugoidogo.github.io/js-util/auth-return.html'
         const url=new URL('https://sugoidogo.github.io/js-util/auth-return.html')
         url.search=new URLSearchParams({
@@ -485,11 +490,16 @@
         fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+access_token.value}})
         .then((response)=>response.json())
         .then(function(json){
+            console.debug(json)
             if(!json.expires_in){
                 throw 'invalid token'
             }
-            twitch_status.innerHTML='Twitch Authorization expires in '+Math.floor(json.expires_in / (3600*24))+' days'
-
+            twitch_status.innerHTML='Twitch Authorization expires in '+Math.floor(json.expires_in / (3600*24))+' days.'
+            if(!json.scopes.includes("moderator:manage:shoutouts")){
+                document.querySelector('b#missing_perms').hidden=false;
+            }else{
+                document.querySelector('b#missing_perms').hidden=true;
+            }
         }).catch(error=>{
             twitch_status.innerHTML='Not Authorized with Twitch'
             console.warn(error)

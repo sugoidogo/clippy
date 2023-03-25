@@ -243,6 +243,18 @@
             return getUserChannelInfo(target)
             .then(async function(userChannelInfo){
                 target=userChannelInfo
+                if('twitch_shoutout' in config){
+                    const url=new URL('https://api.twitch.tv/helix/chat/shoutouts')
+                    url.search=new URLSearchParams({
+                        from_broadcaster_id:broadcaster.id,
+                        moderator_id:broadcaster.id,
+                        to_broadcaster_id:target.id
+                    })
+                    fetch(url,{
+                        method:'POST',
+                        headers:auth_headers
+                    })
+                }
                 if('message' in config){
                     IRCSendChat(fillVars(config.messageText,target))
                 }
