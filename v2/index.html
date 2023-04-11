@@ -281,6 +281,7 @@
     import {getFormDataDeep} from '../js-util/FormDataDeep.mjs'
     const config_select = document.querySelector('#config_select')
     const form = document.querySelector('#config_span')
+    const status = document.querySelector('#status')
     form.onsubmit = async function (event) {
         event.preventDefault()
         const config = getFormDataDeep(event.target, true)
@@ -290,11 +291,16 @@
         const length=location.href.lastIndexOf('/')
         const url=new URL(location.href.substring(0,length+1)+'overlay.html?name='+config_select.value)
         url.hash=JSON.stringify(config)
+        if(url.href.length>30000){
+            status.innerHTML="Too much data! That url probably won't work unless you use this page as a custom browser dock in OBS."
+            status.hidden=false
+        }else{
+            status.hidden=true
+        }
         navigator.clipboard.writeText(url.href)
     }
 
     const new_config_span = document.querySelector('#new_config_span')
-    const status = document.querySelector('#status')
     config_select.onchange = async function () {
         const config_span = document.querySelector('#config_span')
         config_span.hidden = true
