@@ -1,5 +1,4 @@
 <h1>Clippy</h1>
-<div id="status">Loading...</div>
 <div>
     <button id="resetLocalStorage">Reset tokens</button>
     <button id="resetLocalForage">Reset instances</button>
@@ -96,6 +95,7 @@
             </td>
         </tr>
     </table>
+    <div id="status">Loading...</div>
     <button type="submit">Copy URL</button>
 </form>
 
@@ -298,6 +298,12 @@
             status.hidden=true
         }
         navigator.clipboard.writeText(url.href)
+        .catch(function(){
+            url.hash=''
+            status.innerHTML='Auto Copy Failed! Please manually copy the following url:<br>'
+                +url.href+'<br>'
+            status.hidden=false
+        })
     }
 
     const new_config_span = document.querySelector('#new_config_span')
