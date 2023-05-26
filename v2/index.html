@@ -3,18 +3,13 @@
     <button id="resetLocalStorage">Reset tokens</button>
     <button id="resetLocalForage">Reset instances</button>
 </div>
-<div>
-    <span id="twitch_status">Checking Twitch Token Status...</span>
-    <b hidden id="missing_perms">You need a new token for clippy's new features!</b>
-    <button id="twitch_button">Get New Authorization</button>
-</div>
 <select id="config_select" hidden></select>
 <form id="new_config_span" hidden>
     <input type="text" id="new_config_text_input" required minlength="1">
     <button type="submit">Create New Instance</button>
 </form>
 <form id="config_span" hidden>
-    <input type="hidden" name="access_token">
+    <input type="hidden" name="refresh_token">
     <button type="button" id="delete_config_button">delete</button>
     <table>
         <tr>
@@ -203,6 +198,10 @@
 </style>
 
 <script type="module">
+    import get_tokens from 'https://tba.sugoidogo.com/tba.mjs'
+    const client_id='72wtxvzs6erokrj33lk105whmoo381'
+    const scope='chat:read chat:edit'
+
     const resetLocalStorageButton=document.querySelector("button#resetLocalStorage")
     resetLocalStorageButton.onclick=function(){
         if(window.confirm('This will erase all of your login tokens and reload the page. Continue?')){
@@ -470,51 +469,6 @@
         draggedElement = null
     }
 
-    const twitch_status=document.querySelector('#twitch_status')
-    const twitch_button=document.querySelector('#twitch_button')
-    twitch_button.onclick=function(){
-        const auth_url=new URL('https://id.twitch.tv/oauth2/authorize')
-        auth_url.search=new URLSearchParams({
-            'client_id':'72wtxvzs6erokrj33lk105whmoo381',
-            'response_type':'token',
-            'scope':'chat:read chat:edit moderator:manage:shoutouts'
-        }).toString()+'&redirect_uri=https://sugoidogo.github.io/js-util/auth-return.html'
-        const url=new URL('https://sugoidogo.github.io/js-util/auth-return.html')
-        url.search=new URLSearchParams({
-            'redirect_uri':location.origin+location.pathname,
-            'target':auth_url.href
-        })
-        twitch_status.innerHTML='Authorizing with Twitch...'
-        location.assign(url)
-    }
-    const hash_params=new URLSearchParams(location.hash.substring(1))
-    if(hash_params.has('access_token')){
-        window.localStorage.setItem('access_token',hash_params.get('access_token'))
-    }else{
-        hash_params.set('access_token',window.localStorage.getItem('access_token'))
-    }
-    const access_token=document.querySelector('[name=access_token]')
-    access_token.value=hash_params.get('access_token')
-    if(access_token==null){
-        twitch_status.innerHTML='Not Authorized with Twitch'
-    }else{
-        twitch_status.innerHTML='Verifying token...'
-        fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+access_token.value}})
-        .then((response)=>response.json())
-        .then(function(json){
-            console.debug(json)
-            if(!json.expires_in){
-                throw 'invalid token'
-            }
-            twitch_status.innerHTML='Twitch Authorization expires in '+Math.floor(json.expires_in / (3600*24))+' days.'
-            if(!json.scopes.includes("moderator:manage:shoutouts")){
-                document.querySelector('b#missing_perms').hidden=false;
-            }else{
-                document.querySelector('b#missing_perms').hidden=true;
-            }
-        }).catch(error=>{
-            twitch_status.innerHTML='Not Authorized with Twitch'
-            console.warn(error)
-        })
-    }
+    const tokens=await get_tokens(client_id,scope)
+    document.querySelector('input[name=refresh_token]').value=tokens.refresh_token
 </script>

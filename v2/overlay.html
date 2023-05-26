@@ -52,6 +52,8 @@
     import fontScale from '../js-util/fontScale.mjs'
     import loadAsset from '../js-util/AssetLoader.mjs'
     import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
+    import {refresh_tokens} from 'https://tba.sugoidogo.com/tba.mjs'
+    const client_id='72wtxvzs6erokrj33lk105whmoo381'
     const config_name=new URLSearchParams(location.search).get('name')
     const localStorage=localforage.createInstance({name:'clippy.v2'})
     const video=document.querySelector('video')
@@ -308,7 +310,6 @@
     // read config
     try {
         config=JSON.parse(decodeURIComponent(location.hash.substring(1))) || await localStorage.getItem(config_name)
-        await verify(config.access_token)
     } catch {
         config=await localStorage.getItem(config_name)
     }
@@ -324,8 +325,8 @@
         config.messageText=config.messageText.replaceAll("https://twitch.tv/$login)","https://twitch.tv/$login )")
     }
     // read access_token after returning from js-util/auth-return
-    config.access_token=new URLSearchParams(location.hash.substring(1)).get('access_token') || config.access_token
-    console.debug(config)
+    config.access_token=await refresh_tokens(client_id,config.refresh_token)
+            .then(tokens=>tokens.access_token)
     // verify access_token
     fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+config.access_token}})
     // populate auth_header from response, and use it to get broadcaster info
