@@ -336,58 +336,62 @@
         console.debug(config)
         for (let [key, value] of Object.entries(config)) {
             console.debug(key, typeof value, value)
-            switch (typeof value) {
-                case 'boolean': {
-                    config_span.querySelector('[name=' + key + ']').checked = value
-                    continue
-                }
-                case 'number':
-                case 'string': {
-                    config_span.querySelector('[name=' + key + ']').value = value
-                    continue
-                }
-                case 'object': {
-                    if(!(value instanceof Array)){
-                        value=[value]
+            try {
+                switch (typeof value) {
+                    case 'boolean': {
+                        config_span.querySelector('[name=' + key + ']').checked = value
+                        continue
                     }
-                    switch (key) {
-                        case 'commands': {
-                            for (const command of value) {
-                                addCommand(command)
-                            }
-                            continue
+                    case 'number':
+                    case 'string': {
+                        config_span.querySelector('[name=' + key + ']').value = value
+                        continue
+                    }
+                    case 'object': {
+                        if(!(value instanceof Array)){
+                            value=[value]
                         }
-                        case 'filters': {
-                            for (const filter of value) {
-                                filter_select.value = filter.type
-                                const filter_list_item = filter_add_button.onclick()
-                                for (const [key, value] of Object.entries(filter)) {
-                                    if (key === 'type') {
-                                        continue
-                                    }
-                                    const dataElement = filter_list_item.querySelector('[name=' + key + ']')
-                                    switch (dataElement.type) {
-                                        case 'checkbox': case 'radio': {
-                                            dataElement.checked = value
-                                            break
+                        switch (key) {
+                            case 'commands': {
+                                for (const command of value) {
+                                    addCommand(command)
+                                }
+                                continue
+                            }
+                            case 'filters': {
+                                for (const filter of value) {
+                                    filter_select.value = filter.type
+                                    const filter_list_item = filter_add_button.onclick()
+                                    for (const [key, value] of Object.entries(filter)) {
+                                        if (key === 'type') {
+                                            continue
                                         }
-                                        default: {
-                                            dataElement.value = value
-                                            break
+                                        const dataElement = filter_list_item.querySelector('[name=' + key + ']')
+                                        switch (dataElement.type) {
+                                            case 'checkbox': case 'radio': {
+                                                dataElement.checked = value
+                                                break
+                                            }
+                                            default: {
+                                                dataElement.value = value
+                                                break
+                                            }
                                         }
                                     }
                                 }
+                                break
                             }
-                            break
-                        }
-                        case 'assets': {
-                            for (const asset of value) {
-                                const data=await (await fetch(asset.data,{cache:'no-cache'})).blob()
-                                addAsset(data, asset.filename)
+                            case 'assets': {
+                                for (const asset of value) {
+                                    const data=await (await fetch(asset.data,{cache:'no-cache'})).blob()
+                                    addAsset(data, asset.filename)
+                                }
                             }
                         }
                     }
                 }
+            } catch (e){
+                console.warn(e)
             }
         }
         config_span.hidden = false
