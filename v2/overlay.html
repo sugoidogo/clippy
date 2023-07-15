@@ -48,6 +48,14 @@
     }
 </style>
 <script type="module">
+    window.onerror=function(message,url,line,error){
+        let dialog=document.createElement('dialog')
+        dialog.innerHTML=message+'<br>'+url+'<br>'+line
+        document.body.appendChild(dialog)
+        dialog.showModal()
+        return true
+    }
+
     import localforage from 'https://unpkg.com/localforage/src/localforage.js'
     import fontScale from '../js-util/fontScale.mjs'
     import loadAsset from '../js-util/AssetLoader.mjs'
@@ -410,13 +418,6 @@
             }
         }
     })
-    .catch(displayError)
-    function displayError(error){
-        const dialog=document.createElement('dialog')
-        dialog.innerHTML=error.message+'<br>'+error.stack
-        document.body.appendChild(dialog)
-        dialog.showModal()
-    }
 
     if('assets' in config){
         for(const asset of config.assets){
