@@ -370,8 +370,7 @@
             }
         }
         irc.onerror=function(error){
-            alert('Clippy lost connection to twitch, please reload. '+error.code+" "+error.reason)
-            throw error
+            location.reload()
         }
         irc.onclose=irc.onerror
         irc.onmessage=function(event){
@@ -411,25 +410,13 @@
             }
         }
     })
-    // get a new access token if previous steps fail
-    .catch(function(error){
-        alert('An error ocurred during clippy startup: '+Object.entries(error))
-        if(!confirm('Would you like clippy to try getting a new access token? If this message repeats itself, make an issue report instead.')){
-            throw error
-        }
-        const auth_url=new URL('https://id.twitch.tv/oauth2/authorize')
-        auth_url.search=new URLSearchParams({
-            'client_id':'72wtxvzs6erokrj33lk105whmoo381',
-            'response_type':'token',
-            'scope':'chat:read chat:edit'
-        }).toString()+'&redirect_uri=https://sugoidogo.github.io/js-util/auth-return.html'
-        const url=new URL('https://sugoidogo.github.io/js-util/auth-return.html')
-        url.search=new URLSearchParams({
-            'redirect_uri':location.origin+location.pathname+location.search,
-            'target':auth_url.href
-        })
-        location.assign(url)
-    })
+    .catch(displayError)
+    function displayError(error){
+        const dialog=document.createElement('dialog')
+        dialog.innerHTML=error.message+'<br>'+error.stack
+        document.body.appendChild(dialog)
+        dialog.showModal()
+    }
 
     if('assets' in config){
         for(const asset of config.assets){
