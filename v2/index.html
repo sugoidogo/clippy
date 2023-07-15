@@ -288,7 +288,9 @@
         const name=config_select.value
         localStorage.setItem(name,config)
         const length=location.href.lastIndexOf('/')
-        const url=new URL(location.href.substring(0,length+1)+'overlay.html?name='+config_select.value)
+        const url=new URL(location.href.substring(0,length+1)+'overlay.html')
+        url.searchParams.append('name',config_select.value)
+        url.searchParams.append('refresh_token',tokens.refresh_token)
         url.hash=JSON.stringify(config)
         if(url.href.length>30000){
             status.innerHTML="Too much data! That url probably won't work unless you use this page as a custom browser dock in OBS."
