@@ -192,6 +192,13 @@
             return newClips
         }
     }
+    /** @param {Response} response */
+    async function validateResponse(response){
+        if(!response.ok){
+            throw new Error(response.code+' '+response.url+' '+await response.text())
+        }
+        return response
+    }
     // collect user and channel vars
     function getUserChannelInfo(login=undefined){
         let userChannelInfo={}
@@ -200,12 +207,13 @@
             url.searchParams.append('login',login)
         }
         return fetch(url,{headers:auth_headers})
+        .then(validateResponse)
         .then((response)=>response.json())
         .then(function(json){
             userChannelInfo=json.data[0]
             url=new URL('https://api.twitch.tv/helix/channels')
             url.searchParams.append('broadcaster_id',userChannelInfo.id)
-            return fetch(url,{headers:auth_headers})
+            return fetch(url,{headers:auth_headers}).then(validateResponse)
         }).then((response)=>response.json())
         .then(function(json){
             const channelInfo=json.data[0]
@@ -221,6 +229,7 @@
         const url=new URL('https://api.twitch.tv/helix/clips')
         url.searchParams.append('id',id)
         return fetch(url,{headers:auth_headers})
+        .then(validateResponse)
         .then(response=>response.json())
         .then(json=>json.data[0])
     }
@@ -286,7 +295,7 @@
                     'broadcaster_id':target.id,
                     'first':config.first
                 })
-                return fetch(url,{headers:auth_headers})
+                return fetch(url,{headers:auth_headers}).then(validateResponse)
             })
             .then(async function(response){
                 if(!response){
@@ -322,6 +331,7 @@
     }
     function verify(token){
         return fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+token}})
+        .then(validateResponse)
     }
     // read config
     try {
@@ -335,7 +345,7 @@
         }
     }
     if(!config.consentText){
-        config.consentText=await fetch('default.json').then(response=>response.json()).then(json=>json.consentText)
+        config.consentText=await fetch('default.json').then(validateResponse).then(response=>response.json()).then(json=>json.consentText)
     }
     if(config.messageText.endsWith("https://twitch.tv/$login)")){
         config.messageText=config.messageText.replaceAll("https://twitch.tv/$login)","https://twitch.tv/$login )")
@@ -345,6 +355,7 @@
             .then(tokens=>tokens.access_token)
     // verify access_token
     fetch('https://id.twitch.tv/oauth2/validate',{headers:{'Authorization':'OAuth '+config.access_token}})
+    .then(validateResponse)
     // populate auth_header from response, and use it to get broadcaster info
     .then(async function(response){
         localStorage.setItem(config_name,config)
@@ -352,6 +363,7 @@
         auth_headers['Authorization']='Bearer '+config.access_token
         auth_headers['Client-Id']=json.client_id
         return fetch('https://api.twitch.tv/helix/users',{headers:auth_headers})
+        .then(validateResponse)
     })
     // store broadcaster info and set up IRC
     .then(async function(response){
@@ -360,6 +372,7 @@
         consent.push(broadcaster.login)
         if(config['img']){
             await fetch(broadcaster.profile_image_url,{mode:'no-cors'})
+            .then(validateResponse)
             img.src=broadcaster.profile_image_url
         }else{
             img.hidden=true
