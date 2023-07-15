@@ -46,14 +46,22 @@
         height: 100vh;
         object-fit: contain;
     }
+    dialog {
+        font-size: xxx-large;
+    }
 </style>
 <script type="module">
-    window.onerror=function(message,url,line,error){
+    window.onerror=function(message,url,line,column,error){
+        console.error(error)
         let dialog=document.createElement('dialog')
-        dialog.innerHTML=message+'<br>'+url+'<br>'+line
         document.body.appendChild(dialog)
         dialog.showModal()
-        return true
+        dialog.innerHTML+=message
+        dialog.innerHTML+='<br>'+url
+        dialog.innerHTML+='<br>'+line
+        dialog.innerHTML+='<br>'+column
+        dialog.innerHTML+='<br>'+error.stack
+        return false
     }
 
     import localforage from 'https://unpkg.com/localforage/src/localforage.js'
