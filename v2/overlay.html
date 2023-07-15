@@ -82,6 +82,7 @@
     const queue=[]
     let mods=[]
     let history=[]
+    let awaitingConsent=[]
     let config=undefined
     let irc=undefined
     let broadcaster=undefined
@@ -288,6 +289,10 @@
                 if(!consent.includes(target.login)){
                     const text=fillVars(config.consentText,target)
                     IRCSendChat(text)
+                    awaitingConsent.push(target.login)
+                    setTimeout(function(){
+                        awaitingConsent.shift()
+                    },10000)
                     return false
                 }
                 const url=new URL('https://api.twitch.tv/helix/clips')
@@ -428,7 +433,11 @@
                     if(data.split(' ')[1]=='consent'){
                         consent.push(login)
                         window.localStorage.setItem('consent',JSON.stringify(consent))
-                        return IRCSendChat(login+', Thank you for your consent!')
+                        IRCSendChat(login+', Thank you for your consent!')
+                        if(awaitingConsent.includes(login)){
+                            shoutout(login)
+                        }
+                        return
                     }
                     if(tags.includes('badges=broadcaster') || tags.includes('mod=1')){
                         const targets=data.split(' ')
