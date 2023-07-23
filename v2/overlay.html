@@ -393,6 +393,10 @@
             footer.hidden=true
         }
         body.style.opacity=0
+        initIRC()
+    })
+
+    async function initIRC(){
         irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
         irc.onopen=function(){
             IRCSend('PASS oauth:' + config.access_token)
@@ -404,7 +408,7 @@
             }
         }
         irc.onerror=function(error){
-            location.reload()
+            initIRC()
         }
         irc.onclose=irc.onerror
         irc.onmessage=function(event){
@@ -447,7 +451,7 @@
                 }
             }
         }
-    })
+    }
 
     if('assets' in config){
         for(const asset of config.assets){
