@@ -292,7 +292,7 @@
                     awaitingConsent.push(target.login)
                     setTimeout(function(){
                         awaitingConsent.shift()
-                    },10000)
+                    },config['consentTime']*1000)
                     return false
                 }
                 const url=new URL('https://api.twitch.tv/helix/clips')

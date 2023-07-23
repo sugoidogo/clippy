@@ -61,6 +61,12 @@
                 </label>
                 <textarea name="footerText"></textarea><br>
                 <label>
+                    Consent Clip Timeout:
+                    <input type="number" min="0" step="1" value="10" name="consentTime">
+                    seconds
+                </label>
+                <br>
+                <label>
                     Consent message text: <br>
                     <textarea name="consentText"></textarea>
                 </label>
@@ -194,6 +200,10 @@
     td {
         vertical-align: top;
         border: 1px solid lightgray;
+    }
+
+    input[type=number]{
+        width: 4em;
     }
 </style>
 
