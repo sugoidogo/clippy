@@ -265,9 +265,9 @@
                 if(video.paused){
                     loadNextClip()
                 }
-                return [clip]
+                continue
             }
-            return getUserChannelInfo(target)
+            getUserChannelInfo(target)
             .then(async function(userChannelInfo){
                 target=userChannelInfo
                 if('twitch_shoutout' in config){
