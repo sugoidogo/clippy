@@ -9,7 +9,6 @@
     <button type="submit">Create New Instance</button>
 </form>
 <form id="config_span" hidden>
-    <input type="hidden" name="refresh_token">
     <button type="button" id="delete_config_button">delete</button>
     <table>
         <tr>
@@ -486,5 +485,4 @@
     }
 
     const tokens=await get_tokens(client_id,scope)
-    document.querySelector('input[name=refresh_token]').value=tokens.refresh_token
 </script>
