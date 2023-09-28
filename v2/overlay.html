@@ -52,7 +52,6 @@
 </style>
 <script type="module">
     window.onerror=function(message,url,line,column,error){
-        console.error(error)
         let dialog=document.createElement('dialog')
         document.body.appendChild(dialog)
         dialog.showModal()
@@ -83,11 +82,13 @@
     let history=[]
     let awaitingConsent=[]
     let config=undefined
+    /** @type WebSocket */
     let irc=undefined
     let broadcaster=undefined
     let cut=undefined
     let keepHistory=undefined
     let tid=undefined
+    let irctid=undefined
     let consent=JSON.parse(window.localStorage.getItem('consent'))||[]
     //import getUserChannelInfo from './getUserChannelInfo.js'
     // fill variables in a string using bash variable notation
@@ -380,6 +381,18 @@
         initIRC()
     })
 
+    function IRCKeepAlive(){
+        try{
+            if(irctid){
+                clearTimeout(irctid)
+            }
+            irctid=setTimeout(()=>irc.close(),1000)
+            IRCSend('PING :'+location.hostname)
+        }catch{
+            irc.close()
+        }
+    }
+
     async function initIRC(){
         irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
         irc.onopen=function(){
@@ -390,6 +403,7 @@
             if('auto' in config){
                 shoutout(broadcaster.login)
             }
+            IRCKeepAlive()
         }
         irc.onerror=function(error){
             initIRC()
@@ -405,7 +419,15 @@
                 const tags=message.shift()
                 const prefix=message.shift()
                 const data=message.join(":")
-                //console.debug(tags,prefix,data)
+                console.debug({
+                    tags:tags,
+                    prefix:prefix,
+                    data:data
+                })
+                if(prefix.includes('PONG') && data==location.hostname){
+                    clearTimeout(irctid)
+                    setTimeout(IRCKeepAlive,10000)
+                }
                 if(tags=='PING '){
                     return IRCSend('PONG :'+prefix)
                 }
