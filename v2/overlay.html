@@ -435,6 +435,9 @@
                     prefix:prefix,
                     data:data
                 })
+                if(prefix.includes('RECONNECT')){
+                    return initIRC()
+                }
                 if(prefix.includes('PONG') && data==location.hostname){
                     clearTimeout(irctid)
                     setTimeout(IRCKeepAlive,10000)
