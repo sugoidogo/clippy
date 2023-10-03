@@ -420,7 +420,7 @@
         config_span.hidden = false
         status.hidden = true
     }
-    async function reload() {
+    async function reload(value=undefined) {
         while (config_select.children.length != 0) {
             config_select.children[0].remove()
         }
@@ -435,6 +435,9 @@
         option.value = ''
         config_select.append(option)
         config_select.hidden = false
+        if(value){
+            config_select.value=value
+        }
         config_select.onchange()
     }
     function new_config(){
@@ -444,8 +447,8 @@
         .then((response) => response.json())
         .then((json) => localStorage.setItem(new_config_text_input.value, json))
         .then(() => {
+            reload(new_config_text_input.value)
             new_config_text_input.value = ''
-            reload()
         })
     }
     const new_config_button = document.querySelector('#new_config_button')
