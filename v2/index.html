@@ -30,6 +30,16 @@
                     <br>
                 </label>
                 <h3>Commands</h3>
+                <input type="hidden" name="allow_broadcaster" value="on">
+                <label>
+                    <input type="checkbox" name="allow_moderator">
+                    Moderators can give shoutouts
+                </label><br>
+                <label>
+                    <input type="checkbox" name="allow_vip">
+                    VIPs can give shoutouts
+                </label><br>
+                <br>
                 <input type="text" id="command_text_input">
                 <button type="button" id="command_add_button">add</button>
                 <ul id="command_list"></ul>

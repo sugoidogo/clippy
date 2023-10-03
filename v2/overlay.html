@@ -358,6 +358,10 @@
     if(config.messageText.endsWith("https://twitch.tv/$login)")){
         config.messageText=config.messageText.replaceAll("https://twitch.tv/$login)","https://twitch.tv/$login )")
     }
+    if(!('allow_broadcaster' in config)){
+        config.allow_broadcaster=true
+        config.allow_moderator=true
+    }
     // setup twitch authorization
     const tokens=await get_tokens(client_id)
     // store broadcaster info and set up IRC
@@ -456,10 +460,17 @@
                         }
                         return
                     }
-                    if(tags.includes('badges=broadcaster') || tags.includes('mod=1')){
-                        const targets=data.split(' ')
-                        targets.shift()
-                        return shoutout(...targets)
+                    let badges=tags.split('badges=').pop()
+                    badges=badges.split(';').shift()
+                    badges=badges.split(',')
+                    for(let badge of badges){
+                        badge=badge.split('/').shift()
+                        console.debug('badge='+badge)
+                        if('allow_'+badge in config){
+                            const targets=data.split(' ')
+                            targets.shift()
+                            return shoutout(...targets)
+                        }
                     }
                 }
             }

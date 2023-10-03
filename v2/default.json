@@ -1,4 +1,6 @@
 {
+    "allow_broadcaster": true,
+    "allow_moderator": true,
     "command": true,
     "commands": [
         "!clippy",
