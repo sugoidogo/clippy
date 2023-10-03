@@ -18,14 +18,14 @@
     "filters": [
         {
             "type": "history",
-            "keepHistory": true
+            "keepHistory": false
         },
         {
             "type": "featured"
         },
         {
             "type": "single",
-            "mode": "views"
+            "mode": "random"
         }
     ],
     "assets":[
