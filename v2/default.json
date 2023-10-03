@@ -19,11 +19,11 @@
     "first": "100",
     "filters": [
         {
-            "type": "history",
-            "keepHistory": false
+            "type": "featured"
         },
         {
-            "type": "featured"
+            "type": "history",
+            "keepHistory": false
         },
         {
             "type": "single",
