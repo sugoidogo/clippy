@@ -78,11 +78,16 @@
                     clips
                     <br>
                 </label>
+                <label>
+                    <input type="checkbox" name="featuredOnly">
+                    Only use featured clips
+                </label>
                 <select id="filter_select">
                     <option value="duration">filter by clip length</option>
                     <option value="category">filter by clip category</option>
                     <option value="history">avoid replaying clips</option>
                     <option value="single">pick a single clip</option>
+                    <option value="featured">prefer featured clips</option>
                 </select>
                 <button id="filter_add_button">add</button>
                 <br>
@@ -149,6 +154,13 @@
                 <option value="views">most viewed</option>
                 <option value="random">randomly</option>
             </select>
+        </form>
+        <br><button onclick="this.parentElement.remove()">remove</button>
+    </li>
+    <li draggable="true" class="filter_featured">
+        <form name="filters">
+            <input type="hidden" name="type" value="featured">
+            Prefer featured clips
         </form>
         <br><button onclick="this.parentElement.remove()">remove</button>
     </li>

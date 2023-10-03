@@ -129,10 +129,16 @@
             window.localStorage.setItem('history',JSON.stringify(history))
         }
     }
-    // apply a clip filter
+    /** apply a clip filter
+     * @param {Array} clips
+     */
     function applyFilter(clips, filter, target) {
         let newClips = []
         switch (filter.type) {
+            case 'featured':{
+                newClips=clips.filter((clip)=>clip.is_featured)
+                break
+            }
             case 'history':
                 if('keepHistory' in filter){
                     keepHistory=true
@@ -296,10 +302,11 @@
                     return false
                 }
                 const url=new URL('https://api.twitch.tv/helix/clips')
-                url.search=new URLSearchParams({
-                    'broadcaster_id':target.id,
-                    'first':config.first
-                })
+                url.searchParams.append('broadcaster_id',target.id)
+                url.searchParams.append('first',config.first)
+                if(config.featuredOnly){
+                    url.searchParams.append('is_featured',true)
+                }
                 return fetch(url,{headers:tokens.auth_headers}).then(validateResponse)
             })
             .then(async function(response){
