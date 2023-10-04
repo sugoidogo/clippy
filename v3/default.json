@@ -1,0 +1,39 @@
+{
+    "allow_broadcaster": true,
+    "allow_moderator": true,
+    "command": true,
+    "commands": [
+        "!clippy",
+        "!shoutout",
+        "!so"
+    ],
+    "twitch_shoutout": true,
+    "message": true,
+    "messageText": "Check Out $display_name: $description ( Last seen streaming $game_name at https://twitch.tv/$login )",
+    "header": true,
+    "headerText": "Check Out $broadcaster_name",
+    "headerImg": true,
+    "footer": true,
+    "footerText": "\"$title\" by $creator_name",
+    "consentText":"$display_name, you can use '$command consent' to allow your clips to be played on stream",
+    "first": "100",
+    "filters": [
+        {
+            "type": "featured"
+        },
+        {
+            "type": "history",
+            "keepHistory": false
+        },
+        {
+            "type": "single",
+            "mode": "random"
+        }
+    ],
+    "assets":[
+        {
+            "filename":"defaultCSS",
+            "data":"../css/default-v2.css"
+        }
+    ]
+}

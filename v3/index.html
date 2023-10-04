@@ -1,0 +1,580 @@
+<h1>Clippy</h1>
+<div>
+    <button id="resetLocalStorage">Reset tokens</button>
+    <button id="resetLocalForage">Reset instances</button>
+</div>
+<select id="config_select" hidden></select>
+<form id="new_config_span" hidden>
+    <input type="text" id="new_config_text_input" required minlength="1">
+    <button type="submit">Create New Instance</button>
+</form>
+<form id="config_span" hidden>
+    <button type="button" id="delete_config_button">delete</button>
+    <table>
+        <tr>
+            <td>
+                <h2>Activation</h2>
+                <label>
+                    <input type="checkbox" name="auto">
+                    auto-play my clips
+                    <br>
+                </label>
+                <label>
+                    <input type="checkbox" name="raid">
+                    on raid
+                    <br>
+                </label>
+                <label>
+                    <input type="checkbox" name="command">
+                    on chat command
+                    <br>
+                </label>
+                <h3>Commands</h3>
+                <input type="hidden" name="allow_broadcaster" value="on">
+                <label>
+                    <input type="checkbox" name="allow_moderator">
+                    Moderators can give shoutouts
+                </label><br>
+                <label>
+                    <input type="checkbox" name="allow_vip">
+                    VIPs can give shoutouts
+                </label><br>
+                <br>
+                <input type="text" id="command_text_input">
+                <button type="button" id="command_add_button">add</button>
+                <ul id="command_list"></ul>
+            </td>
+            <td>
+                <h2>Behavior</h2>
+                <label>
+                    <input type="checkbox" name="twitch_shoutout">
+                    Activate Twitch Shoutout <br>
+                </label>
+                <label>
+                    <input type="checkbox" name="message">
+                    Send a message in chat <br>
+                </label>
+                <textarea name="messageText"></textarea><br>
+                <label>
+                    <input type="checkbox" name="headerImg">
+                    Header Image <br>
+                </label>
+                <label>
+                    <input type="checkbox" name="header">
+                    Header text <br>
+                </label>
+                <textarea name="headerText"></textarea><br>
+                <label>
+                    <input type="checkbox" name="footer">
+                    Footer text <br>
+                </label>
+                <textarea name="footerText"></textarea><br>
+                <label>
+                    Consent Clip Timeout:
+                    <input type="number" min="0" step="1" value="10" name="consentTime">
+                    seconds
+                </label>
+                <br>
+                <label>
+                    Consent message text: <br>
+                    <textarea name="consentText"></textarea>
+                </label>
+            </td>
+            <td>
+                <h2>Filters</h2>
+                <label>
+                    Search the last
+                    <input type="number" min="1" max="100" value="20" name="first">
+                    clips
+                    <br>
+                </label>
+                <label>
+                    <input type="checkbox" name="featuredOnly">
+                    Only use featured clips
+                </label><br>
+                <select id="filter_select">
+                    <option value="duration">filter by clip length</option>
+                    <option value="category">filter by clip category</option>
+                    <option value="history">avoid replaying clips</option>
+                    <option value="single">pick a single clip</option>
+                    <option value="featured">prefer featured clips</option>
+                </select>
+                <button type="button" id="filter_add_button">add</button>
+                <br>
+                <ol id="filter_list"></ol>
+            </td>
+            <td>
+                <h2>Assets</h2>
+                <input type="file" multiple id="asset_file_input"><br>
+                <ul id="asset_list"></ul>
+            </td>
+        </tr>
+    </table>
+    <button type="submit">Save changes</button>
+    <a id="browser_source_link" target="_blank">Browser Source (Copy Me!)</a>
+</form>
+<div id="status">Loading...</div>
+
+<span id="templates" hidden>
+    <li class="command_list_item">
+        <button onclick="this.parentElement.remove()">remove</button>
+        <input type="text" name="commands">
+    </li>
+    <li draggable="true" class="filter_history">
+        <form name="filters">
+            <input type="hidden" name="type" value="history">
+            Avoid replaying clips <br>
+            <label>
+                <input type="checkbox" name="keepHistory">
+                Keep history across sessions
+            </label>
+        </form>
+        <br><button onclick="this.parentElement.remove()">remove</button>
+    </li>
+    <li draggable="true" class="filter_category">
+        <form name="filters">
+            <input type="hidden" name="type" value="category">
+            Filter by category
+            <select name="mode">
+                <option value="target">Target's category</option>
+                <option value="self">My category</option>
+            </select>
+        </form>
+        <br><button onclick="this.parentElement.remove()">remove</button>
+    </li>
+    <li draggable="true" class="filter_duration">
+        <form name="filters">
+            <input type="hidden" name="type" value="duration">
+            Max clip duration:
+            <input type="number" name="max" min="5" max="60" value="30">
+            seconds <br>
+            Min clip duration:
+            <input type="number" name="min" min="5" max="60" value="10">
+            seconds <br>
+            Cut off clips longer than
+            <input type="number" name="cut" min="5" max="60" value="60">
+            seconds
+        </form>
+        <br><button onclick="this.parentElement.remove()">remove</button>
+    </li>
+    <li draggable="true" class="filter_single">
+        <form name="filters">
+            <input type="hidden" name="type" value="single">
+            Pick a single clip
+            <select name="mode">
+                <option value="views">most viewed</option>
+                <option value="random">randomly</option>
+            </select>
+        </form>
+        <br><button onclick="this.parentElement.remove()">remove</button>
+    </li>
+    <li draggable="true" class="filter_featured">
+        <form name="filters">
+            <input type="hidden" name="type" value="featured">
+            Prefer featured clips
+        </form>
+        <br><button onclick="this.parentElement.remove()">remove</button>
+    </li>
+    <li class="asset_list_item">
+        <form name="assets">
+            <button type="button" onclick="this.parentElement.parentElement.remove()">remove</button>
+            <input type="text" name="filename" class="asset_name">
+            <span class="asset_type"></span>
+            <input type="hidden" name="data" class="asset_data">
+        </form>
+    </li>
+</span>
+
+<style>
+    * {
+        font-family: Inter, Roobert, Helvetica Neue, Helvetica, Arial, sans-serif;
+    }
+    
+    [hidden] {
+        display: none;
+    }
+
+    form {
+        display: inline;
+    }
+
+    textarea {
+        width: 300px;
+        height: 5em;
+    }
+
+    li[draggable=true]{
+        cursor: grab;
+        width: fit-content;
+        margin-top: 1px;
+        border: 1px solid lightgrey;
+    }
+
+    .dragTarget {
+        border-top: 1px dashed black;
+    }
+
+    span {
+        margin-top: 1em;
+        margin-bottom: 1em;
+    }
+
+    td {
+        vertical-align: top;
+        border: 1px solid lightgray;
+    }
+
+    input[type=number]{
+        width: 4em;
+    }
+</style>
+
+<script type="module">
+    import get_tokens from 'https://tba.sugoidogo.com/tba.mjs'
+    const client_id='72wtxvzs6erokrj33lk105whmoo381'
+    const scope='chat:read chat:edit'
+    const tokens=await get_tokens(client_id,scope)
+    
+    const resetLocalStorageButton=document.querySelector("button#resetLocalStorage")
+    resetLocalStorageButton.onclick=function(){
+        if(window.confirm('This will erase all of your login tokens and reload the page. Continue?')){
+            window.localStorage.clear()
+            window.location.reload()
+        }
+    }
+    
+    import localforage from 'https://unpkg.com/localforage/src/localforage.js'
+    /** @type Storage */
+    const localStorage = localforage.createInstance({ name: 'clippy.v2' })
+    const resetLocalForageButton=document.querySelector("button#resetLocalForage")
+    resetLocalForageButton.onclick=function(){
+        if(window.confirm("This will erase all of your clippy settings and reload the page. Continue?")){
+            localStorage.clear()
+            window.location.reload()
+        }
+    }
+
+    const templates = document.querySelector('#templates')
+
+    import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
+    const asset_file_input = document.querySelector('#asset_file_input')
+    const asset_list = document.querySelector('#asset_list')
+    async function addAsset(blob, filename = null) {
+        if (filename === null) {
+            filename = blob.name.split('.')[0]
+        }
+        const asset = templates.querySelector('.asset_list_item').cloneNode(true)
+        console.debug(asset.outerHTML)
+        const asset_name = asset.querySelector('.asset_name')
+        const asset_type = asset.querySelector('.asset_type')
+        const asset_data = asset.querySelector('.asset_data')
+        asset_name.value = filename
+        asset_type.innerHTML = blob.type
+        asset_data.value = await FileReaderAsync.readAs('DataURL',blob)
+        asset_list.append(asset)
+    }
+    asset_file_input.onchange = async function () {
+        for (const file of asset_file_input.files) {
+            addAsset(file)
+        }
+        asset_file_input.value = ''
+    }
+
+    const command_text_input = document.querySelector('#command_text_input')
+    const command_list = document.querySelector('#command_list')
+    const command_add_button = document.querySelector('#command_add_button')
+    function addCommand(command) {
+        const command_list_item = templates.querySelector('.command_list_item').cloneNode(true)
+        command_list_item.querySelector('input').value = command
+        command_list.append(command_list_item)
+    }
+    command_add_button.onclick = function () {
+        addCommand(command_text_input.value)
+        command_text_input.value = ''
+    }
+    command_text_input.onkeydown = async function (event) {
+        if (event.key == 'Enter') {
+            command_add_button.onclick()
+        }
+    }
+
+    const filter_select = document.querySelector('#filter_select')
+    const filter_list = document.querySelector('#filter_list')
+    const filter_add_button = document.querySelector('#filter_add_button')
+    filter_add_button.onclick = function () {
+        const filter_list_item = templates.querySelector('.filter_' + filter_select.value).cloneNode(true)
+        filter_list_item.ondragstart = onDragStart
+        filter_list_item.ondragenter = onDragEnter
+        filter_list_item.ondragover = onDragOver
+        filter_list_item.ondrop = onDrop
+        filter_list.append(filter_list_item)
+        return filter_list_item
+    }
+
+    import {getFormDataDeep} from '../js-util/FormDataDeep.mjs'
+    const config_select = document.querySelector('#config_select')
+    const form = document.querySelector('#config_span')
+    const status = document.querySelector('#status')
+    const link=document.querySelector('#browser_source_link')
+    form.onsubmit = async function (event) {
+        event.preventDefault()
+        status.hidden=false
+        status.innerHTML='Saving settings...'
+        const config = getFormDataDeep(event.target, true)
+        console.debug(config)
+        const name=config_select.value
+        fetch('https://ts.sugoidogo.com/config/'+name+'.json',{
+            headers: tokens.auth_headers,
+            method: 'POST',
+            body: JSON.stringify(config)
+        }).then(async function(response){
+            if(!response.ok){
+                throw await response.text()
+            }
+            status.innerHTML='Settings saved'
+            setTimeout(()=>status.hidden=true,1500)
+        }).catch(error=>{
+            console.error(error)
+            status.innerHTML='Error saving: '+error
+        })
+    }
+
+    const new_config_span = document.querySelector('#new_config_span')
+    config_select.onchange = async function () {
+        const config_span = document.querySelector('#config_span')
+        config_span.hidden = true
+        if (config_select.value === '') {
+            new_config_span.hidden = false
+            status.hidden = true
+            return
+        } else {
+            status.innerHTML = 'Loading...'
+            status.hidden = false
+            new_config_span.hidden = true
+        }
+        for(const list of [asset_list,command_list,filter_list]){
+            while (list.hasChildNodes()) {
+                list.childNodes[0].remove()
+            }
+        }
+        for(const checkbox of config_span.querySelectorAll('input[type=checkbox]')){
+            checkbox.checked=false
+        }
+        for(const textarea of config_span.querySelectorAll('textarea')){
+            textarea.value=''
+        }
+        const config = await fetch('https://ts.sugoidogo.com/config/'+config_select.value+'.json',{
+            headers: tokens.auth_headers
+        }).then(async response=>{
+            if(!response.ok){
+                throw await response.text()
+            }
+            return response.json()
+        }).catch(error=>{
+            console.error(error)
+            status.innerHTML='Error loading settings :'+error
+            return null
+        })
+        if(!config.consentText){
+            config.consentText=await fetch('default.json').then(response=>response.json()).then(json=>json.consentText)
+        }
+        if(!config.allow_broadcaster){
+            config.allow_broadcaster=true
+            config.allow_moderator=true
+        }
+        console.debug(config)
+        for (let [key, value] of Object.entries(config)) {
+            console.debug(key, typeof value, value)
+            try {
+                switch (typeof value) {
+                    case 'boolean': {
+                        config_span.querySelector('[name=' + key + ']').checked = value
+                        continue
+                    }
+                    case 'number':
+                    case 'string': {
+                        config_span.querySelector('[name=' + key + ']').value = value
+                        continue
+                    }
+                    case 'object': {
+                        if(!(value instanceof Array)){
+                            value=[value]
+                        }
+                        switch (key) {
+                            case 'commands': {
+                                for (const command of value) {
+                                    addCommand(command)
+                                }
+                                continue
+                            }
+                            case 'filters': {
+                                for (const filter of value) {
+                                    filter_select.value = filter.type
+                                    const filter_list_item = filter_add_button.onclick()
+                                    for (const [key, value] of Object.entries(filter)) {
+                                        if (key === 'type') {
+                                            continue
+                                        }
+                                        const dataElement = filter_list_item.querySelector('[name=' + key + ']')
+                                        switch (dataElement.type) {
+                                            case 'checkbox': case 'radio': {
+                                                dataElement.checked = value
+                                                break
+                                            }
+                                            default: {
+                                                dataElement.value = value
+                                                break
+                                            }
+                                        }
+                                    }
+                                }
+                                break
+                            }
+                            case 'assets': {
+                                for (const asset of value) {
+                                    const data=await (await fetch(asset.data,{cache:'no-cache'})).blob()
+                                    addAsset(data, asset.filename)
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e){
+                console.warn(e)
+            }
+        }
+        const length=location.href.lastIndexOf('/')
+        const url=new URL(location.href.substring(0,length+1)+'overlay.html')
+        url.searchParams.append('name',config_select.value)
+        url.searchParams.append('refresh_token',tokens.refresh_token)
+        link.href=url
+        config_span.hidden = false
+        status.hidden = true
+    }
+    async function reload(value=undefined) {
+        while (config_select.children.length != 0) {
+            config_select.children[0].remove()
+        }
+        /** @type Array<String> */
+        const config_names=await fetch('https://ts.sugoidogo.com/config/',{
+            headers: tokens.auth_headers
+        }).then(async response=>{
+            if(!response.ok){
+                throw await response.text()
+            }
+            return response.json()
+        }).catch(error=>{
+            console.warn(error)
+            return []
+        })
+        if(config_names.length==0){
+            /** @type Array<String> */
+            const local_config_names=await localStorage.keys()
+            if(local_config_names.length>0){
+                status.innerHTML='Uploading your settings to Sugoi Web Services...'
+                for(const config_name of local_config_names){
+                    const config=await localStorage.getItem(config_name)
+                    await fetch('https://ts.sugoidogo.com/config/'+config_name+'.json',{
+                        headers: tokens.auth_headers,
+                        method: 'POST',
+                        body: config
+                    }).then(async response=>{
+                        if(!response.ok){
+                            throw await response.text()
+                        }
+                    }).catch(error=>{
+                        console.error(error)
+                        status.innerHTML='There was a problem uploading your settings: '+error
+                    })
+                    status.innerHTML='Upload complete!'
+                    location.reload()
+                }
+            }
+        }
+        for (let config_name of config_names) {
+            config_name=config_name.replace('.json','')
+            const option = document.createElement('option')
+            option.innerHTML = config_name
+            option.value = config_name
+            config_select.append(option)
+        }
+        const option = document.createElement('option')
+        option.innerHTML = 'Create New'
+        option.value = ''
+        config_select.append(option)
+        config_select.hidden = false
+        if(value){
+            config_select.value=value
+        }
+        config_select.onchange()
+    }
+    function new_config(){
+        new_config_span.hidden = true
+        status.hidden = false
+        fetch('default.json',{cache:'no-cache'})
+        .then((response) => response.json())
+        .then((json) => fetch('https://ts.sugoidogo.com/config/'+new_config_text_input.value+'.json',{
+            headers: tokens.auth_headers,
+            method: 'POST',
+            body: JSON.stringify(json)
+        }))
+        .then(() => {
+            reload(new_config_text_input.value)
+            new_config_text_input.value = ''
+        })
+    }
+    const new_config_button = document.querySelector('#new_config_button')
+    const new_config_text_input = document.querySelector('#new_config_text_input')
+    new_config_span.onsubmit = function (event) {
+        event.preventDefault()
+        new_config()
+    }
+
+    const delete_config_button = document.querySelector('#delete_config_button')
+    delete_config_button.onclick = async function () {
+        await fetch('https://ts.sugoidogo.com/config/'+config_select.value+'.json',{
+            headers: tokens.auth_headers,
+            method: 'DELETE'
+        }).then(async response=>{
+            if(!response.ok){
+                status.innerHTML='failed to delete config: '+await response.text()
+            }
+        })
+        reload()
+    }
+    reload()
+
+    let draggedElement = null
+
+    async function onDragStart(event) {
+        draggedElement = event.srcElement
+    }
+
+    async function onDragEnter(event) {
+        event.preventDefault()
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.dropEffect = "move";
+    }
+
+    async function onDragOver(event) {
+        event.preventDefault()
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.dropEffect = "move";
+    }
+
+    async function onDrop(event) {
+        event.preventDefault()
+        let target = event.target
+        let parent=false
+        while(!parent){
+            if(target.tagName.toLowerCase()=='li'){
+                parent=target.parentElement
+            }else{
+                target=target.parentElement
+            }
+        }
+        parent.insertBefore(draggedElement, target)
+        event.target.classList.remove('dragTarget')
+        draggedElement = null
+    }
+</script>

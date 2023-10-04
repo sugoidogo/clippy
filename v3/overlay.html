@@ -1,0 +1,514 @@
+<body>
+    <header>
+        <img>
+        <h1>Clippy is Loading</h1>
+    </header>
+    <video autoplay></video>
+    <footer><h2>This message should disappear shortly</h2></footer>
+</body>
+<style>
+    body {
+        overflow: hidden;
+        margin: 0px;
+    }
+    header{
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        right: 0px;
+    }
+    footer{
+        position: absolute;
+        bottom: 0px;
+        left: 0px;
+        right: 0px;
+    }
+    header,footer{
+        display: flex;
+        align-items: center;
+    }
+    footer{
+        justify-content: center;
+    }
+    h1,h2 {
+        font-size: 10vh;
+        margin-block-start: 0px;
+        margin-block-end: 0px;
+        white-space: nowrap;
+    }
+    img{
+        height: 10vh;
+        border-radius: 50%;
+        display: inline;
+    }
+    video {
+        width: 100vw;
+        height: 100vh;
+        object-fit: contain;
+    }
+    dialog {
+        font-size: xxx-large;
+    }
+</style>
+<script type="module">
+    window.onerror=function(message,url,line,column,error){
+        let dialog=document.createElement('dialog')
+        document.body.appendChild(dialog)
+        dialog.showModal()
+        dialog.innerHTML+=message
+        dialog.innerHTML+='<br>'+url
+        dialog.innerHTML+='<br>'+line
+        dialog.innerHTML+='<br>'+column
+        dialog.innerHTML+='<br>'+error.stack
+        return false
+    }
+
+    import localforage from 'https://unpkg.com/localforage/src/localforage.js'
+    import fontScale from '../js-util/fontScale.mjs'
+    import loadAsset from '../js-util/AssetLoader.mjs'
+    import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
+    import get_tokens from 'https://tba.sugoidogo.com/tba.mjs'
+    const client_id='72wtxvzs6erokrj33lk105whmoo381'
+    const tokens=await get_tokens(client_id)
+    const config_name=new URLSearchParams(location.search).get('name')
+    const localStorage=localforage.createInstance({name:'clippy.v2'})
+    const video=document.querySelector('video')
+    const img=document.querySelector('img')
+    const header=document.querySelector('h1')
+    const footer=document.querySelector('h2')
+    const body=document.querySelector('body')
+    const maxFontSize=parseInt(getComputedStyle(header).fontSize)
+    const queue=[]
+    let mods=[]
+    let history=[]
+    let awaitingConsent=[]
+    let config=undefined
+    /** @type WebSocket */
+    let irc=undefined
+    let broadcaster=undefined
+    let cut=undefined
+    let keepHistory=undefined
+    let tid=undefined
+    let irctid=undefined
+    let consent=[]
+    //import getUserChannelInfo from './getUserChannelInfo.js'
+    // fill variables in a string using bash variable notation
+    function fillVars(string,vars,prefix='$'){
+        for(const [key,val] of Object.entries(vars)){
+            string=string.replaceAll(prefix+key,val)
+        }
+        return string
+    }
+    // load the next clip from the queue
+    async function loadNextClip(){
+        clearTimeout(tid)
+        const clip=queue.shift()
+        if(clip==undefined){
+            if('auto' in config){
+                shoutout(broadcaster.login)
+            }else{        
+                video.pause()
+                body.style.opacity=0
+            }
+            return
+        }
+        console.debug(clip)
+        if('headerImg' in config){
+            img.src=clip.profile_image_url
+        }
+        if('header' in config){
+            header.innerHTML=fillVars(config.headerText,clip)
+            await fontScale(header,maxFontSize)
+        }
+        if('footer' in config){
+            footer.innerHTML=fillVars(config.footerText,clip)
+            await fontScale(footer,maxFontSize)
+        }
+        video.src=clip.video_url
+        history.push(clip.id)
+        if(keepHistory){
+            window.localStorage.setItem('history',JSON.stringify(history))
+        }
+    }
+    /** apply a clip filter
+     * @param {Array} clips
+     */
+    function applyFilter(clips, filter, target) {
+        let newClips = []
+        switch (filter.type) {
+            case 'featured':{
+                newClips=clips.filter((clip)=>clip.is_featured)
+                break
+            }
+            case 'history':
+                if('keepHistory' in filter){
+                    keepHistory=true
+                    history=JSON.parse(window.localStorage.getItem('history'))
+                    if(!(history instanceof Array)){
+                        history=[]
+                    }
+                }
+                newClips = clips.filter(clip => !history.includes(clip.id))
+                if(newClips.length==0){
+                    let index=history.length
+                    for(const clip of clips){
+                        if(history.indexOf(clip.id)<index){
+                            index=history.indexOf(clip.id)
+                        }
+                    }
+                    history.splice(index,1)
+                    newClips = clips.filter(clip => !history.includes(clip.id))
+                }
+                break
+            case 'category':
+                let game_id = 0
+                switch (filter.mode) {
+                    case 'self':
+                        game_id = broadcaster.game_id
+                        break
+                    case 'target':
+                        game_id = target.game_id
+                        break
+                }
+                newClips = clips.filter(clip => clip.game_id == game_id)
+                break
+            case 'duration':
+                cut=filter.cut
+                newClips = clips.filter(clip => filter.min <= clip.duration <= filter.max)
+                break
+            case 'single':
+                switch (filter.mode) {
+                    case 'views':
+                        let view_count = 0
+                        for (const clip of clips) {
+                            if (clip.view_count > view_count) {
+                                view_count = clip.view_count
+                            }
+                        }
+                        clips = clips.filter(clip => clip.view_count >= view_count)
+                    case 'random':
+                        const index = Math.floor(Math.random() * clips.length)
+                        newClips.push(clips[index])
+                        break
+                }
+                break
+        }
+        console.debug('filter result:',filter.type,newClips)
+        if (newClips.length == 0) {
+            return clips
+        } else {
+            return newClips
+        }
+    }
+    /** @param {Response} response */
+    async function validateResponse(response){
+        if(!response.ok){
+            throw new Error(response.code+' '+response.url+' '+await response.text())
+        }
+        return response
+    }
+    // collect user and channel vars
+    function getUserChannelInfo(login=undefined){
+        let userChannelInfo={}
+        let url=new URL('https://api.twitch.tv/helix/users')
+        if(login){
+            url.searchParams.append('login',login)
+        }
+        return fetch(url,{headers:tokens.auth_headers})
+        .then(validateResponse)
+        .then((response)=>response.json())
+        .then(function(json){
+            userChannelInfo=json.data[0]
+            url=new URL('https://api.twitch.tv/helix/channels')
+            url.searchParams.append('broadcaster_id',userChannelInfo.id)
+            return fetch(url,{headers:tokens.auth_headers}).then(validateResponse)
+        }).then((response)=>response.json())
+        .then(function(json){
+            const channelInfo=json.data[0]
+            userChannelInfo.game_id=channelInfo.game_id
+            userChannelInfo.game_name=channelInfo.game_name
+            userChannelInfo.title=channelInfo.title
+            userChannelInfo.delay=channelInfo.delay
+            userChannelInfo.command=config.commands[0]
+            return userChannelInfo
+        })
+    }
+    function getClipByID(id){
+        const url=new URL('https://api.twitch.tv/helix/clips')
+        url.searchParams.append('id',id)
+        return fetch(url,{headers:tokens.auth_headers})
+        .then(validateResponse)
+        .then(response=>response.json())
+        .then(json=>json.data[0])
+    }
+    // send a raw irc message
+    window.IRCSend=function(message){
+        console.debug('< '+message)
+        irc.send(message)
+    }
+    // send a chat message in the broadcaster's channel
+    window.IRCSendChat=function(message){
+        IRCSend('PRIVMSG #' + broadcaster.login + ' :' + message)
+    }
+    // play one or more clips from one or more twitch channels
+    window.shoutout=async function(...targets){
+        console.debug('shoutout',targets)
+        broadcaster=await getUserChannelInfo()
+        for(let target of targets){
+            if(target[0]==='@'){
+                target=target.substring(1)
+            }
+            //target=target.toLowerCase()
+            if(target.startsWith('https://')){
+                target=target.split('/').at(-1)
+                console.debug(target)
+                let clip=await getClipByID(target)
+                target=await getUserChannelInfo(clip.broadcaster_name)
+                if('message' in config){
+                    IRCSendChat(fillVars(config.messageText,target))
+                }
+                clip.profile_image_url=target.profile_image_url
+                clip.video_url=clip.thumbnail_url.replace(/-preview-.*/g,'.mp4')
+                queue.push(clip)
+                if(video.paused){
+                    loadNextClip()
+                }
+                continue
+            }
+            getUserChannelInfo(target)
+            .then(async function(userChannelInfo){
+                target=userChannelInfo
+                if('twitch_shoutout' in config){
+                    const url=new URL('https://api.twitch.tv/helix/chat/shoutouts')
+                    url.search=new URLSearchParams({
+                        from_broadcaster_id:broadcaster.id,
+                        moderator_id:broadcaster.id,
+                        to_broadcaster_id:target.id
+                    })
+                    fetch(url,{
+                        method:'POST',
+                        headers:tokens.auth_headers
+                    })
+                }
+                if('message' in config){
+                    IRCSendChat(fillVars(config.messageText,target))
+                }
+                if(!consent.includes(target.login)){
+                    const text=fillVars(config.consentText,target)
+                    IRCSendChat(text)
+                    awaitingConsent.push(target.login)
+                    setTimeout(function(){
+                        awaitingConsent.shift()
+                    },(config['consentTime']||0)*1000)
+                    return false
+                }
+                const url=new URL('https://api.twitch.tv/helix/clips')
+                url.searchParams.append('broadcaster_id',target.id)
+                url.searchParams.append('first',config.first)
+                if(config.featuredOnly){
+                    url.searchParams.append('is_featured',true)
+                }
+                return fetch(url,{headers:tokens.auth_headers}).then(validateResponse)
+            })
+            .then(async function(response){
+                if(!response){
+                    return 'user has not given consent to use their clips'
+                }
+                const json=await response.json()
+                let clips=json.data
+                if('filters' in config){
+                    for(const filter of config.filters){
+                        clips=applyFilter(clips,filter,target)
+                    }
+                }
+                for(const clip of clips){
+                    clip.profile_image_url=target.profile_image_url
+                    clip.video_url=clip.thumbnail_url.replace(/-preview-.*/g,'.mp4')
+                }
+                queue.push(...clips)
+                console.debug(video.src)
+                if(video.paused){
+                    loadNextClip()
+                }
+                return clips
+            })
+        }
+    }
+    video.onended=loadNextClip
+    video.onplay=function(){
+        body.style.opacity=1
+        if(cut){
+            console.debug('cut',cut)
+            tid=setTimeout(video.onended,cut*1000)
+        }
+    }
+    // read config
+    config=await fetch('https://ts.sugoidogo.com/config/'+config_name+'.json',{
+        headers: tokens.auth_headers
+    }).then(response=>{
+        if(!response.ok){
+            return JSON.parse(decodeURIComponent(location.hash.substring(1)))
+        }
+        return response.json()
+    })
+    for(const list_name of ['commands','assets','filters']){
+        if(!(config[list_name] instanceof Array)){
+            config[list_name]=[config[list_name]]
+        }
+    }
+    if(!config.consentText){
+        config.consentText=await fetch('default.json').then(validateResponse).then(response=>response.json()).then(json=>json.consentText)
+    }
+    if(config.messageText.endsWith("https://twitch.tv/$login)")){
+        config.messageText=config.messageText.replaceAll("https://twitch.tv/$login)","https://twitch.tv/$login )")
+    }
+    if(!('allow_broadcaster' in config)){
+        config.allow_broadcaster=true
+        config.allow_moderator=true
+    }
+    // store broadcaster info and set up IRC
+    fetch('https://api.twitch.tv/helix/users',{headers:tokens.auth_headers})
+    .then(validateResponse)
+    .then(async function(response){
+        const json=await response.json()
+        broadcaster=json.data[0]
+        consent.push(broadcaster.login)
+        if(config['img']){
+            await fetch(broadcaster.profile_image_url,{mode:'no-cors'})
+            .then(validateResponse)
+            img.src=broadcaster.profile_image_url
+        }else{
+            img.hidden=true
+        }
+        if(config['header']){
+            await fontScale(header)
+        }else{
+            header.hidden=true
+        }
+        if(config['footer']){
+            await fontScale(footer)
+        }else{
+            footer.hidden=true
+        }
+        body.style.opacity=0
+        initIRC()
+    })
+
+    function IRCKeepAlive(){
+        try{
+            if(irctid){
+                clearTimeout(irctid)
+            }
+            irctid=setTimeout(()=>irc.close(),1000)
+            IRCSend('PING :'+location.hostname)
+        }catch{
+            irc.close()
+        }
+    }
+
+    async function initIRC(){
+        irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
+        irc.onopen=function(){
+            IRCSend('PASS oauth:' + tokens.access_token)
+            IRCSend('NICK ' + broadcaster.login)
+            IRCSend('JOIN #' + broadcaster.login)
+            IRCSend('CAP REQ :twitch.tv/tags twitch.tv/commands')    
+            if('auto' in config){
+                shoutout(broadcaster.login)
+            }
+            IRCKeepAlive()
+        }
+        irc.onerror=function(error){
+            initIRC()
+        }
+        irc.onclose=irc.onerror
+        irc.onmessage=function(event){
+            console.debug('> '+event.data)
+            for(let message of event.data.split('\r\n')){
+                if(message==''){
+                    continue
+                }
+                message=message.split(':')
+                const tags=message.shift()
+                const prefix=message.shift()
+                const data=message.join(":")
+                console.debug({
+                    tags:tags,
+                    prefix:prefix,
+                    data:data
+                })
+                if(prefix.includes('RECONNECT')){
+                    return initIRC()
+                }
+                if(prefix.includes('PONG') && data==location.hostname){
+                    clearTimeout(irctid)
+                    setTimeout(IRCKeepAlive,10000)
+                }
+                if(tags=='PING '){
+                    return IRCSend('PONG :'+prefix)
+                }
+                if('raid' in config && tags.includes('msg-id=raid')){
+                    return shoutout(tags.split('msg-param-login=').at(-1).split(';')[0])
+                }
+                if(data==undefined){
+                    continue
+                }
+                if('command' in config && config.commands.includes(data.split(' ')[0])){
+                    const login=prefix.split('!')[0]
+                    console.debug(login+':'+data)
+                    if(data.split(' ')[1]=='consent'){
+                        consent.push(login)
+                        fetch('https://ts.sugoidogo.com/consent.json',{
+                            headers: tokens.auth_headers,
+                            method: 'POST',
+                            body: JSON.stringify(consent)
+                        })
+                        IRCSendChat(login+', Thank you for your consent!')
+                        if(awaitingConsent.includes(login)){
+                            shoutout(login)
+                        }
+                        return
+                    }
+                    let badges=tags.split('badges=').pop()
+                    badges=badges.split(';').shift()
+                    badges=badges.split(',')
+                    for(let badge of badges){
+                        badge=badge.split('/').shift()
+                        console.debug('badge='+badge)
+                        if('allow_'+badge in config){
+                            const targets=data.split(' ')
+                            targets.shift()
+                            return shoutout(...targets)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if('assets' in config){
+        for(const asset of config.assets){
+            if(!asset.data.startsWith('data:')){
+                asset.data=await FileReaderAsync.readAs('DataURL',(await(await fetch(url,{cache:'no-cache'})).blob()))
+            }
+            loadAsset(asset.data,asset.filename,true)
+        }
+    }
+
+    fetch('https://ts.sugoidogo.com/consent.json',{
+        headers: tokens.auth_headers
+    })
+    .then(response=>{
+        if(response.ok){
+            return response.json()
+        }
+        consent=window.localStorage.getItem('consent')||[]
+        fetch('https://ts.sugoidogo.com/consent.json',{
+            headers: tokens.auth_headers,
+            method: 'POST',
+            body:consent
+        })
+        return JSON.parse(consent)
+    }).then(json=>consent=json)
+
+</script>
