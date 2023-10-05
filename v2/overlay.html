@@ -269,7 +269,7 @@
                 clip.profile_image_url=target.profile_image_url
                 clip.video_url=clip.thumbnail_url.replace(/-preview-.*/g,'.mp4')
                 queue.push(clip)
-                if(video.paused){
+                if(video.paused && queue.length==1){
                     loadNextClip()
                 }
                 continue
