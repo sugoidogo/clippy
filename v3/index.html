@@ -477,7 +477,7 @@
                     await fetch('https://ts.sugoidogo.com/config/'+config_name+'.json',{
                         headers: tokens.auth_headers,
                         method: 'POST',
-                        body: config
+                        body: JSON.stringify(config)
                     }).then(async response=>{
                         if(!response.ok){
                             throw await response.text()
