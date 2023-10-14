@@ -353,12 +353,15 @@
         }
     }
     if(!config.consentText){
+        console.warn('adding consentText to config')
         config.consentText=await fetch('default.json').then(validateResponse).then(response=>response.json()).then(json=>json.consentText)
     }
     if(config.messageText.endsWith("https://twitch.tv/$login)")){
+        console.warn('editing messageText for mobile links')
         config.messageText=config.messageText.replaceAll("https://twitch.tv/$login)","https://twitch.tv/$login )")
     }
     if(!('allow_broadcaster' in config)){
+        console.warn('adding broadcaster and moderator permissions')
         config.allow_broadcaster=true
         config.allow_moderator=true
     }
