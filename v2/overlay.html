@@ -365,6 +365,16 @@
         config.allow_broadcaster=true
         config.allow_moderator=true
     }
+    let hasFeatured=false
+    for(const filter of config.filters){
+        if(filter.type=='featured'){
+            hasFeatured=true
+        }
+    }
+    if(!hasFeatured){
+        console.warn('adding featured clips filter')
+        config.filters.unshift({'type':'featured'})
+    }
     // setup twitch authorization
     const tokens=await get_tokens(client_id)
     // store broadcaster info and set up IRC
