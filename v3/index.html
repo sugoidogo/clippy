@@ -474,6 +474,15 @@
                 status.innerHTML='Uploading your settings to Sugoi Web Services...'
                 for(const config_name of local_config_names){
                     const config=await localStorage.getItem(config_name)
+                    let hasFeatured=false
+                    for(const filter of config.filters){
+                        if(filter.type=='featured'){
+                            hasFeatured=true
+                        }
+                    }
+                    if(!hasFeatured){
+                        config.filters.unshift({'type':'featured'})
+                    }
                     await fetch('https://ts.sugoidogo.com/config/'+config_name+'.json',{
                         headers: tokens.auth_headers,
                         method: 'POST',
