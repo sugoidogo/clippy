@@ -505,11 +505,11 @@
         if(response.ok){
             return response.json()
         }
-        consent=window.localStorage.getItem('consent')||[]
+        consent=window.localStorage.getItem('consent')||'[]'
         fetch('https://ts.sugoidogo.com/consent.json',{
             headers: tokens.auth_headers,
             method: 'POST',
-            body:consent
+            body:JSON.stringify(consent)
         })
         return JSON.parse(consent)
     }).then(json=>consent=json)
