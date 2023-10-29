@@ -507,7 +507,7 @@
         }
         let postbody='[]'
         try{
-            consent=window.localStorage.getItem('consent')
+            consent=window.localStorage.getItem('consent')||[]
             if(typeof consent === 'string' || consent instanceof String){
                 postbody=consent
                 consent=JSON.parse(postbody)
