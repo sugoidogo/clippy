@@ -505,13 +505,26 @@
         if(response.ok){
             return response.json()
         }
-        consent=window.localStorage.getItem('consent')||'[]'
+        let postbody='[]'
+        try{
+            consent=window.localStorage.getItem('consent')
+            if(typeof consent === 'string' || consent instanceof String){
+                postbody=consent
+                consent=JSON.parse(postbody)
+            }else{
+                postbody=JSON.stringify(consent)
+            }
+        }catch(e){
+            console.warn(e)
+            consent=[]
+            postbody='[]'
+        }
         fetch('https://ts.sugoidogo.com/consent.json',{
             headers: tokens.auth_headers,
             method: 'POST',
-            body:JSON.stringify(consent)
+            body:postbody
         })
-        return JSON.parse(consent)
+        return consent
     }).then(json=>consent=json)
 
 </script>
