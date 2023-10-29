@@ -507,7 +507,7 @@
         }
         let postbody='[]'
         try{
-            consent=window.localStorage.getItem('consent')||[]
+            consent=window.localStorage.getItem('consent')||[broadcaster.login]
             if(typeof consent === 'string' || consent instanceof String){
                 postbody=consent
                 consent=JSON.parse(postbody)
@@ -516,8 +516,8 @@
             }
         }catch(e){
             console.warn(e)
-            consent=[]
-            postbody='[]'
+            consent=[broadcaster.login]
+            postbody=JSON.stringify(consent)
         }
         fetch('https://ts.sugoidogo.com/consent.json',{
             headers: tokens.auth_headers,
