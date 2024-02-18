@@ -402,20 +402,28 @@
             if(irctid){
                 clearTimeout(irctid)
             }
-            irctid=setTimeout(()=>irc.close(),1000)
+            irctid=setTimeout(()=>initIRC(),1000)
             IRCSend('PING :'+location.hostname)
         }catch{
-            irc.close()
+            initIRC()
         }
     }
 
     async function initIRC(){
+        if(irc){
+            try{
+                irc.onclose=null;
+                irc.close()
+            }catch{
+                irc=null
+            }
+        }
         irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
         irc.onopen=function(){
             IRCSend('PASS oauth:' + tokens.access_token)
             IRCSend('NICK ' + broadcaster.login)
             IRCSend('JOIN #' + broadcaster.login)
-            IRCSend('CAP REQ :twitch.tv/tags twitch.tv/commands')    
+            IRCSend('CAP REQ :twitch.tv/tags twitch.tv/commands')
             if('auto' in config){
                 shoutout(broadcaster.login)
             }
