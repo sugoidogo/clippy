@@ -120,7 +120,7 @@
         <button onclick="this.parentElement.remove()">remove</button>
         <input type="text" name="commands">
     </li>
-    <li draggable="true" class="filter_history">
+    <li class="draggable filter_history">
         <form name="filters">
             <input type="hidden" name="type" value="history">
             Avoid replaying clips <br>
@@ -131,7 +131,7 @@
         </form>
         <br><button onclick="this.parentElement.remove()">remove</button>
     </li>
-    <li draggable="true" class="filter_category">
+    <li class="draggable filter_category">
         <form name="filters">
             <input type="hidden" name="type" value="category">
             Filter by category
@@ -142,7 +142,7 @@
         </form>
         <br><button onclick="this.parentElement.remove()">remove</button>
     </li>
-    <li draggable="true" class="filter_duration">
+    <li class="draggable filter_duration">
         <form name="filters">
             <input type="hidden" name="type" value="duration">
             Max clip duration:
@@ -157,7 +157,7 @@
         </form>
         <br><button onclick="this.parentElement.remove()">remove</button>
     </li>
-    <li draggable="true" class="filter_single">
+    <li class="draggable filter_single">
         <form name="filters">
             <input type="hidden" name="type" value="single">
             Pick a single clip
@@ -168,7 +168,7 @@
         </form>
         <br><button onclick="this.parentElement.remove()">remove</button>
     </li>
-    <li draggable="true" class="filter_featured">
+    <li class="draggable filter_featured">
         <form name="filters">
             <input type="hidden" name="type" value="featured">
             Prefer featured clips
@@ -203,15 +203,15 @@
         height: 5em;
     }
 
-    li[draggable=true]{
+    .draggable {
         cursor: grab;
         width: fit-content;
         margin-top: 1px;
         border: 1px solid lightgrey;
     }
 
-    .dragTarget {
-        border-top: 1px dashed black;
+    .sortable-ghost {
+        opacity: 0;
     }
 
     span {
@@ -303,13 +303,13 @@
     const filter_add_button = document.querySelector('#filter_add_button')
     filter_add_button.onclick = function () {
         const filter_list_item = templates.querySelector('.filter_' + filter_select.value).cloneNode(true)
-        filter_list_item.ondragstart = onDragStart
-        filter_list_item.ondragenter = onDragEnter
-        filter_list_item.ondragover = onDragOver
-        filter_list_item.ondrop = onDrop
         filter_list.append(filter_list_item)
         return filter_list_item
     }
+    
+    import sortable from 'https://cdn.jsdelivr.net/npm/sortablejs/+esm'
+    sortable.create(filter_list)
+    
 
     import {getFormDataDeep} from '../js-util/FormDataDeep.mjs'
     const config_select = document.querySelector('#config_select')
@@ -552,38 +552,4 @@
         reload()
     }
     reload()
-
-    let draggedElement = null
-
-    async function onDragStart(event) {
-        draggedElement = event.srcElement
-    }
-
-    async function onDragEnter(event) {
-        event.preventDefault()
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.dropEffect = "move";
-    }
-
-    async function onDragOver(event) {
-        event.preventDefault()
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.dropEffect = "move";
-    }
-
-    async function onDrop(event) {
-        event.preventDefault()
-        let target = event.target
-        let parent=false
-        while(!parent){
-            if(target.tagName.toLowerCase()=='li'){
-                parent=target.parentElement
-            }else{
-                target=target.parentElement
-            }
-        }
-        parent.insertBefore(draggedElement, target)
-        event.target.classList.remove('dragTarget')
-        draggedElement = null
-    }
 </script>
