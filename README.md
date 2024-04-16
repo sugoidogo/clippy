@@ -13,3 +13,10 @@ That url contains all your settings for the selected instance of clippy.
 Use it as a browser source in obs or any other streaming software.
 ## Support
 Support information for all my software is on my [GitHub profile](https://github.com/sugoidogo)
+## Preview
+### All Settings
+![](clippy-settings-preview.png)
+### Drag and Drop Filters List
+![](clippy-filters-demo.gif)
+### Default Layout
+![](clippy-shoutout-preview.png)
