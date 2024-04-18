@@ -373,6 +373,12 @@
         console.warn('adding standalone !consent command')
         config.consent_commands=['!consent']
     }
+    if(typeof config.consent_commands === 'string' || config.consent_commands instanceof String){
+        config.consent_commands=[config.consent_commands]
+    }
+    if(typeof config.commands === 'string' || config.commands instanceof String){
+        config.commands=[config.commands]
+    }
     // store broadcaster info and set up IRC
     fetch('https://api.twitch.tv/helix/users',{headers:tokens.auth_headers})
     .then(validateResponse)
