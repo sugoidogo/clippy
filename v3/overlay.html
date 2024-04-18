@@ -459,17 +459,20 @@
                     data:data
                 })
                 if(prefix.includes('RECONNECT')){
-                    return initIRC()
+                    initIRC()
+                    continue
                 }
                 if(prefix.includes('PONG') && data==location.hostname){
                     clearTimeout(irctid)
                     setTimeout(IRCKeepAlive,10000)
                 }
                 if(tags=='PING '){
-                    return IRCSend('PONG :'+prefix)
+                    IRCSend('PONG :'+prefix)
+                    continue
                 }
                 if('raid' in config && tags.includes('msg-id=raid')){
-                    return shoutout(tags.split('msg-param-login=').at(-1).split(';')[0])
+                    shoutout(tags.split('msg-param-login=').at(-1).split(';')[0])
+                    continue
                 }
                 if(data==undefined){
                     continue
@@ -495,7 +498,8 @@
                         if('allow_'+badge in config){
                             const targets=data.split(' ')
                             targets.shift()
-                            return shoutout(...targets)
+                            shoutout(...targets)
+                            continue
                         }
                     }
                 }
