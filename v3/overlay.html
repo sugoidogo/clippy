@@ -369,6 +369,10 @@
         config.allow_broadcaster=true
         config.allow_moderator=true
     }
+    if(!('consent_commands' in config)){
+        console.warn('adding standalone !consent command')
+        config.consent_commands=['!consent']
+    }
     // store broadcaster info and set up IRC
     fetch('https://api.twitch.tv/helix/users',{headers:tokens.auth_headers})
     .then(validateResponse)
@@ -464,21 +468,17 @@
                 if(data==undefined){
                     continue
                 }
+                if('consent_commands' in config && config.consent_commands.includes(data.split(' ')[0])){
+                    const login=prefix.split('!')[0]
+                    addConsent(login)
+                    continue
+                }
                 if('command' in config && config.commands.includes(data.split(' ')[0])){
                     const login=prefix.split('!')[0]
                     console.debug(login+':'+data)
                     if(data.split(' ')[1]=='consent'){
-                        consent.push(login)
-                        fetch('https://ts.sugoidogo.com/consent.json',{
-                            headers: tokens.auth_headers,
-                            method: 'POST',
-                            body: JSON.stringify(consent)
-                        })
-                        IRCSendChat(login+', Thank you for your consent!')
-                        if(awaitingConsent.includes(login)){
-                            shoutout(login)
-                        }
-                        return
+                        addConsent(login)
+                        continue
                     }
                     let badges=tags.split('badges=').pop()
                     badges=badges.split(';').shift()
@@ -494,6 +494,19 @@
                     }
                 }
             }
+        }
+    }
+
+    async function addConsent(login){
+        consent.push(login)
+        fetch('https://ts.sugoidogo.com/consent.json',{
+            headers: tokens.auth_headers,
+            method: 'POST',
+            body: JSON.stringify(consent)
+        })
+        IRCSendChat(login+', Thank you for your consent!')
+        if(awaitingConsent.includes(login)){
+            shoutout(login)
         }
     }
 

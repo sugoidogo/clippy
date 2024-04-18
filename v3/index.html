@@ -29,7 +29,7 @@
                     on chat command
                     <br>
                 </label>
-                <h3>Commands</h3>
+                <h3>Shoutout Commands</h3>
                 <input type="hidden" name="allow_broadcaster" value="on">
                 <label>
                     <input type="checkbox" name="allow_moderator">
@@ -43,6 +43,10 @@
                 <input type="text" id="command_text_input">
                 <button type="button" id="command_add_button">add</button>
                 <ul id="command_list"></ul>
+                <h3>Consent Commands</h3>
+                <input type="text" id="consent_text_input">
+                <button type="button" id="consent_add_button">add</button>
+                <ul id="consent_list"></ul>
             </td>
             <td>
                 <h2>Behavior</h2>
@@ -119,6 +123,10 @@
     <li class="command_list_item">
         <button onclick="this.parentElement.remove()">remove</button>
         <input type="text" name="commands">
+    </li>
+    <li class="consent_list_item">
+        <button onclick="this.parentElement.remove()">remove</button>
+        <input type="text" name="consent_commands">
     </li>
     <li class="draggable filter_history">
         <form name="filters">
@@ -302,6 +310,24 @@
         }
     }
 
+    const consent_text_input = document.querySelector('#consent_text_input')
+    const consent_list = document.querySelector('#consent_list')
+    const consent_add_button = document.querySelector('#consent_add_button')
+    function addConsentCommand(command) {
+        const consent_list_item = templates.querySelector('.consent_list_item').cloneNode(true)
+        consent_list_item.querySelector('input').value = command
+        consent_list.append(consent_list_item)
+    }
+    consent_add_button.onclick = function () {
+        addConsentCommand(consent_text_input.value)
+        consent_text_input.value = ''
+    }
+    consent_text_input.onkeydown = async function (event) {
+        if (event.key == 'Enter') {
+            consent_add_button.onclick()
+        }
+    }
+
     const filter_select = document.querySelector('#filter_select')
     const filter_list = document.querySelector('#filter_list')
     const filter_add_button = document.querySelector('#filter_add_button')
@@ -388,6 +414,9 @@
         }
         console.debug(config)
         for (let [key, value] of Object.entries(config)) {
+            if(key.includes('command') && (typeof value === 'string' || value instanceof String)){
+                value=[value]
+            }
             console.debug(key, typeof value, value)
             try {
                 switch (typeof value) {
@@ -408,6 +437,12 @@
                             case 'commands': {
                                 for (const command of value) {
                                     addCommand(command)
+                                }
+                                continue
+                            }
+                            case 'consent_commands': {
+                                for (const command of value) {
+                                    addConsentCommand(command)
                                 }
                                 continue
                             }

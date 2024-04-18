@@ -7,6 +7,9 @@
         "!shoutout",
         "!so"
     ],
+    "consent_commands":[
+        "!consent"
+    ],
     "twitch_shoutout": true,
     "message": true,
     "messageText": "Check Out $display_name: $description ( Last seen streaming $game_name at https://twitch.tv/$login )",
