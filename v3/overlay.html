@@ -229,7 +229,7 @@
             userChannelInfo.game_name=channelInfo.game_name
             userChannelInfo.title=channelInfo.title
             userChannelInfo.delay=channelInfo.delay
-            userChannelInfo.command=config.commands[0]
+            userChannelInfo.command=config.consent_commands[0]
             return userChannelInfo
         })
     }
@@ -359,6 +359,10 @@
     if(!config.consentText){
         console.warn('adding consentText to config')
         config.consentText=await fetch('default.json').then(validateResponse).then(response=>response.json()).then(json=>json.consentText)
+    }
+    if(config.consentText.includes('$command consent')){
+        console.warn('editing consentText to new format')
+        config.consentText=config.consentText.replace('$command consent','$command')
     }
     if(config.messageText.endsWith("https://twitch.tv/$login)")){
         console.warn('editing messageText for mobile links')
