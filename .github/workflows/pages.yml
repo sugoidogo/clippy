@@ -32,6 +32,11 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: 'recursive'
+      - run: |
+        npm install github-readme-to-html
+        npx github-readme-to-html
+        mv dist/* .
+        rm -r dist
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Upload artifact
