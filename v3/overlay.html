@@ -390,9 +390,8 @@
         const json=await response.json()
         broadcaster=json.data[0]
         consent.push(broadcaster.login)
-        if(config['img']){
+        if(config['headerImg']){
             await fetch(broadcaster.profile_image_url,{mode:'no-cors'})
-            .then(validateResponse)
             img.src=broadcaster.profile_image_url
         }else{
             img.hidden=true
