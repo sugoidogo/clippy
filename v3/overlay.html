@@ -91,6 +91,26 @@
     let tid=undefined
     let irctid=undefined
     let consent=[]
+
+    /**
+     * @param {RequestInfo | URL} input
+     * @param {RequestInit} init
+     * @returns {Promise<Response>}
+     */
+    function fetch(input,init=undefined){
+        return window.fetch(input,init).catch(async error=>{
+            if(error.message==="Failed to fetch"){
+                await new Promise(function(resolve,reject){
+                    setTimeout(resolve,1000)
+                })
+                return fetch(input,init)
+            }else{
+                throw error
+            }
+        })
+    }
+
+
     //import getUserChannelInfo from './getUserChannelInfo.js'
     // fill variables in a string using bash variable notation
     function fillVars(string,vars,prefix='$'){
