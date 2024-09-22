@@ -380,11 +380,11 @@
         console.warn('adding consentText to config')
         config.consentText=await fetch('default.json').then(validateResponse).then(response=>response.json()).then(json=>json.consentText)
     }
-    if(config.consentText.includes('$command consent')){
+    if(String(config.consentText).includes('$command consent')){
         console.warn('editing consentText to new format')
         config.consentText=config.consentText.replace('$command consent','$command')
     }
-    if(config.messageText.endsWith("https://twitch.tv/$login)")){
+    if(String(config.messageText).endsWith("https://twitch.tv/$login)")){
         console.warn('editing messageText for mobile links')
         config.messageText=config.messageText.replaceAll("https://twitch.tv/$login)","https://twitch.tv/$login )")
     }
