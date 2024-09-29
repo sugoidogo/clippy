@@ -242,6 +242,13 @@
 </style>
 
 <script type="module">
+    try{
+        const sentry=await import('https://cdn.jsdelivr.net/npm/@sentry/browser@8/+esm')
+        sentry.init({dsn:'https://12a35480bb2a4f32ac743c7fdb2be18b@app.glitchtip.com/8351'})
+    }catch(e){
+        console.warn('automatic error reporting failed to load',e)
+    }
+
     import get_tokens from 'https://tba.sugoidogo.com/tba.mjs'
     const client_id='72wtxvzs6erokrj33lk105whmoo381'
     const scope='chat:read chat:edit moderator:manage:shoutouts'

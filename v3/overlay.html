@@ -51,16 +51,11 @@
     }
 </style>
 <script type="module">
-    window.onerror=function(message,url,line,column,error){
-        let dialog=document.createElement('dialog')
-        document.body.appendChild(dialog)
-        dialog.showModal()
-        dialog.innerHTML+=message
-        dialog.innerHTML+='<br>'+url
-        dialog.innerHTML+='<br>'+line
-        dialog.innerHTML+='<br>'+column
-        dialog.innerHTML+='<br>'+error.stack
-        return false
+    try{
+        const sentry=await import('https://cdn.jsdelivr.net/npm/@sentry/browser@8/+esm')
+        sentry.init({dsn:'https://12a35480bb2a4f32ac743c7fdb2be18b@app.glitchtip.com/8351'})
+    }catch(e){
+        console.warn('automatic error reporting failed to load',e)
     }
 
     import localforage from 'https://unpkg.com/localforage/src/localforage.js'
