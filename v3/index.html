@@ -248,13 +248,7 @@
             dsn:'https://12a35480bb2a4f32ac743c7fdb2be18b@app.glitchtip.com/8351',
             integrations: [
                 sentry.feedbackIntegration({colorScheme:"light"})
-            ],
-            beforeSend(event,hint) {
-                if(event.exception && event.event_id){
-                    sentry.showReportDialog({eventId:event.event_id})
-                }
-                return event
-            }
+            ]
         })
     }catch(e){
         console.warn('automatic error reporting failed to load',e)
