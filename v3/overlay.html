@@ -459,7 +459,18 @@
             }
         }
         irc=new WebSocket('wss://irc-ws.chat.twitch.tv:443')
-        irc.onopen=function(){
+        irc.onopen=async function(){
+            const sleep=0
+            while(irc.readyState!=irc.OPEN){
+                if(sleep<3){
+                    console.warn('waiting 1 second for irc connection')
+                    await new Promise(resolve,reject=>{
+                        setTimeout(resolve,1000)
+                    })
+                }else{
+                    throw new Error('failed to connect to irc after 3 seconds')
+                }
+            }
             IRCSend('PASS oauth:' + tokens.access_token)
             IRCSend('NICK ' + broadcaster.login)
             IRCSend('JOIN #' + broadcaster.login)
