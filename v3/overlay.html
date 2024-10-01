@@ -98,23 +98,38 @@
     let tid=undefined
     let irctid=undefined
     let consent=[]
-
+    let fetchRetryCount=0
     /**
      * @param {RequestInfo | URL} input
      * @param {RequestInit} init
      * @returns {Promise<Response>}
      */
     function fetch(input,init=undefined){
-        return window.fetch(input,init).catch(async error=>{
-            if(error.message==="Failed to fetch"){
+        fetchRetryCount++
+        const response=window.fetch(input,init)
+        .then(async response=>{
+            if(response.status>=500 && fetchRetryCount<2){
                 await new Promise(function(resolve,reject){
                     setTimeout(resolve,1000)
                 })
                 return fetch(input,init)
             }else{
+                fetchRetryCount=0
+                return response
+            }
+        })
+        .catch(async error=>{
+            if(error.message==="Failed to fetch" && fetchRetryCount < 30){
+                await new Promise(function(resolve,reject){
+                    setTimeout(resolve,1000)
+                })
+                return fetch(input,init)
+            }else{
+                fetchRetryCount=0
                 throw error
             }
         })
+        return response
     }
 
 
