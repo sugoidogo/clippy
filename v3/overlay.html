@@ -582,7 +582,7 @@
     if('assets' in config){
         for(const asset of config.assets){
             if(!asset.data.startsWith('data:')){
-                asset.data=await FileReaderAsync.readAs('DataURL',(await(await fetch(url,{cache:'no-cache'})).blob()))
+                asset.data=await FileReaderAsync.readAs('DataURL',(await(await fetch(asset.data,{cache:'no-cache'})).blob()))
             }
             loadAsset(asset.data,asset.filename,true)
         }
