@@ -276,6 +276,9 @@
             userChannelInfo.delay=channelInfo.delay
             userChannelInfo.command=config.consent_commands[0]
             return userChannelInfo
+        }).catch(error=>{
+            console.warn(error)
+            throw new Error('user not found')
         })
     }
     function getClipByID(id){
@@ -376,6 +379,11 @@
                     loadNextClip()
                 }
                 return clips
+            }).catch(error=>{
+                console.warn(error)
+                if(error.name==='Error'){
+                    IRCSendChat(error.message)
+                }
             })
         }
     }
