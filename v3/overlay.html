@@ -490,7 +490,7 @@
             while(irc.readyState!=irc.OPEN){
                 if(sleep<3){
                     console.warn('waiting 1 second for irc connection')
-                    await new Promise(resolve,reject=>{
+                    await new Promise((resolve,reject)=>{
                         setTimeout(resolve,1000)
                     })
                 }else{
