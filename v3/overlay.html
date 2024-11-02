@@ -267,6 +267,9 @@
         .then(validateResponse)
         .then((response)=>response.json())
         .then(function(json){
+            if(json.data.length===0){
+                throw new Error('user not found')
+            }
             userChannelInfo=json.data[0]
             url=new URL('https://api.twitch.tv/helix/channels')
             url.searchParams.append('broadcaster_id',userChannelInfo.id)
@@ -280,9 +283,6 @@
             userChannelInfo.delay=channelInfo.delay
             userChannelInfo.command=config.consent_commands[0]
             return userChannelInfo
-        }).catch(error=>{
-            console.warn(error)
-            throw new Error('user not found')
         })
     }
     function getClipByID(id){
