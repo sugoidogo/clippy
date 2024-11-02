@@ -79,7 +79,6 @@
     import FileReaderAsync from '../js-util/FileReaderAsync.mjs'
     import get_tokens from 'https://tba.sugoidogo.com/tba.mjs'
     const client_id='72wtxvzs6erokrj33lk105whmoo381'
-    const tokens=await get_tokens(client_id)
     const config_name=new URLSearchParams(location.search).get('name')
     const localStorage=localforage.createInstance({name:'clippy.v2'})
     const video=document.querySelector('video')
@@ -89,6 +88,7 @@
     const body=document.querySelector('body')
     const maxFontSize=parseInt(getComputedStyle(header).fontSize)
     const queue=[]
+    let tokens=await get_tokens(client_id)
     let mods=[]
     let history=[]
     let awaitingConsent=[]
@@ -115,6 +115,10 @@
                 await new Promise(function(resolve,reject){
                     setTimeout(resolve,1000)
                 })
+                return fetch(input,init)
+            }else if(response.status>=400 && (await response.text()).includes("Unauthorized")){
+                tokens=await get_tokens(client_id)
+                Object.assign(init.headers,tokens.auth_headers)
                 return fetch(input,init)
             }else{
                 fetchRetryCount=0
