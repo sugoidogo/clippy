@@ -55,7 +55,8 @@
         const sentry=await import('https://cdn.jsdelivr.net/npm/@sentry/browser@8/+esm')
         sentry.init({
             dsn:'https://12a35480bb2a4f32ac743c7fdb2be18b@app.glitchtip.com/8351',
-            environment:location.hostname
+            environment:location.hostname,
+            release:"3.1.0"
         })
     }catch(e){
         console.warn('automatic error reporting failed to load',e)
