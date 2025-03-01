@@ -1,4 +1,4 @@
-# Clippy
+# SugoiClippy
 Play Twitch Clips on demand
 ## Features
 - Consent: Clippy requires that the user who receives a shoutout gives their consent before playing their clips.
