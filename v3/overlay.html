@@ -538,6 +538,10 @@
                     addConsent(login)
                     continue
                 }
+                if(data.toLowerCase().startsWith('!getclippy')){
+                    IRCSendChat('Get SugoiClippy at https://github.com/sugoidogo/clippy')
+                    continue
+                }
                 if('command' in config && config.commands.includes(data.split(' ')[0])){
                     const login=prefix.split('!')[0]
                     console.debug(login+':'+data)
