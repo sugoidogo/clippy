@@ -281,7 +281,7 @@
         }
     }
     
-    import localforage from 'https://unpkg.com/localforage/src/localforage.js'
+    import localforage from 'https://cdn.jsdelivr.net/npm/localforage@1/+esm'
     /** @type Storage */
     const localStorage = localforage.createInstance({ name: 'clippy.v2' })
     const resetLocalForageButton=document.querySelector("button#resetLocalForage")
