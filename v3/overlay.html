@@ -51,6 +51,24 @@
     }
 </style>
 <script type="module">
+    if(new URLSearchParams(location.search).get('error')){
+        console.warn('error popups enabled')
+        function errorPopup(error){
+            if('reason' in error){
+                error=error.reason
+            }
+            let dialog=document.createElement('dialog')
+            document.body.appendChild(dialog)
+            dialog.showModal()
+            for (const key of Object.getOwnPropertyNames(error)){
+                try{
+                    dialog.innerHTML+=key+' '+error['key']+'<br>'
+                }catch{}
+            }
+        }
+        addEventListener("error",errorPopup)
+        addEventListener("unhandledrejection",errorPopup)
+    }
     import localforage from 'https://cdn.jsdelivr.net/npm/localforage@1/+esm'
     import fontScale from '../js-util/fontScale.mjs'
     import loadAsset from '../js-util/AssetLoader.mjs'
