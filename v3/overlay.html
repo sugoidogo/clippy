@@ -532,6 +532,13 @@
                     prefix:prefix,
                     data:data
                 })
+                if(tags.includes('source-room-id=')){
+                    let source_id=tags.split('source-room-id=').at(-1).split(';')[0]
+                    if(source_id!=broadcaster.id){
+                        console.debug('ignoring shared chat message: '+source_id+'!='+broadcaster.id)
+                        return
+                    }
+                }
                 if(prefix.includes('RECONNECT')){
                     initIRC()
                     continue
