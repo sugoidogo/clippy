@@ -87,7 +87,6 @@
     let tokens=await get_tokens(client_id)
     let mods=[]
     let history=[]
-    let awaitingConsent=[]
     let config=undefined
     /** @type WebSocket */
     let irc=undefined
@@ -96,7 +95,6 @@
     let keepHistory=undefined
     let tid=undefined
     let irctid=undefined
-    let consent=[]
     let fetchRetryCount=0
     /**
      * @param {RequestInfo | URL} input
@@ -112,7 +110,7 @@
                     setTimeout(resolve,1000)
                 })
                 return fetch(input,init)
-            }else if(response.status>=400 && (await response.text()).includes("Unauthorized")){
+            }else if(response.status>=400 && (await response.clone().text()).includes("Unauthorized")){
                 tokens=await get_tokens(client_id)
                 Object.assign(init.headers,tokens.auth_headers)
                 return fetch(input,init)
@@ -277,7 +275,6 @@
             userChannelInfo.game_name=channelInfo.game_name
             userChannelInfo.title=channelInfo.title
             userChannelInfo.delay=channelInfo.delay
-            userChannelInfo.command=config.consent_commands[0]
             return userChannelInfo
         })
     }
@@ -299,11 +296,20 @@
         IRCSend('PRIVMSG #' + broadcaster.login + ' :' + message)
     }
     // get a working URL for a clip
-    async function getVideoURL(origin) {
-        const url=new URL('https://videolink.sugoidogo.com')
-        url.searchParams.append('url',origin)
+    async function getVideoURL(broadcaster,clip_id) {
+        const url=new URL('https://clippy.sugoidogo.com')
+        url.searchParams.append('broadcaster_id',broadcaster.id)
+        url.searchParams.append('clip_id',clip_id)
         const response=await fetch(url)
-        return response.text()
+        const json=await response.json()
+        if(response.status==200){
+            return json['data'][0]['landscape_download_url']
+        }
+        if(response.status==403){
+            IRCSendChat('@'+broadcaster.display_name+' To allow your clips to play on future shoutouts, go to the following url: '+json['auth_uri'])
+            throw new Error(json['error'])
+        }
+        throw new Error('unrecognized response')
     }
     // play one or more clips from one or more twitch channels
     window.shoutout=async function(...targets){
@@ -323,7 +329,7 @@
                     IRCSendChat(fillVars(config.messageText,target))
                 }
                 clip.profile_image_url=target.profile_image_url
-                clip.video_url=getVideoURL(clip.embed_url+'&parent=clips.twitch.tv')
+                clip.video_url=getVideoURL(target,clip.id)
                 queue.push(clip)
                 if(video.paused && queue.length==1){
                     loadNextClip()
@@ -348,15 +354,6 @@
                 if('message' in config){
                     IRCSendChat(fillVars(config.messageText,target))
                 }
-                if(!consent.includes(target.login)){
-                    const text=fillVars(config.consentText,target)
-                    IRCSendChat(text)
-                    awaitingConsent.push(target.login)
-                    setTimeout(function(){
-                        awaitingConsent.shift()
-                    },(config['consentTime']||0)*1000)
-                    return false
-                }
                 const url=new URL('https://api.twitch.tv/helix/clips')
                 url.searchParams.append('broadcaster_id',target.id)
                 url.searchParams.append('first',config.first)
@@ -366,9 +363,6 @@
                 return fetch(url,{headers:tokens.auth_headers}).then(validateResponse)
             })
             .then(async function(response){
-                if(!response){
-                    return 'user has not given consent to use their clips'
-                }
                 const json=await response.json()
                 let clips=json.data
                 if('filters' in config){
@@ -378,7 +372,7 @@
                 }
                 for(const clip of clips){
                     clip.profile_image_url=target.profile_image_url
-                    clip.video_url=getVideoURL(clip.embed_url+'&parent=clips.twitch.tv')
+                    clip.video_url=getVideoURL(target,clip.id)
                 }
                 queue.push(...clips)
                 console.debug(video.src)
@@ -416,14 +410,6 @@
             config[list_name]=[config[list_name]]
         }
     }
-    if(!config.consentText){
-        console.warn('adding consentText to config')
-        config.consentText=await fetch('default.json').then(validateResponse).then(response=>response.json()).then(json=>json.consentText)
-    }
-    if(String(config.consentText).includes('$command consent')){
-        console.warn('editing consentText to new format')
-        config.consentText=config.consentText.replace('$command consent','$command')
-    }
     if(String(config.messageText).endsWith("https://twitch.tv/$login)")){
         console.warn('editing messageText for mobile links')
         config.messageText=config.messageText.replaceAll("https://twitch.tv/$login)","https://twitch.tv/$login )")
@@ -432,13 +418,6 @@
         console.warn('adding broadcaster and moderator permissions')
         config.allow_broadcaster=true
         config.allow_moderator=true
-    }
-    if(!('consent_commands' in config)){
-        console.warn('adding standalone !consent command')
-        config.consent_commands=['!consent']
-    }
-    if(typeof config.consent_commands === 'string' || config.consent_commands instanceof String){
-        config.consent_commands=[config.consent_commands]
     }
     if(typeof config.commands === 'string' || config.commands instanceof String){
         config.commands=[config.commands]
@@ -449,7 +428,6 @@
     .then(async function(response){
         const json=await response.json()
         broadcaster=json.data[0]
-        consent.push(broadcaster.login)
         if(config['headerImg']){
             await fetch(broadcaster.profile_image_url,{mode:'no-cors'})
             img.src=broadcaster.profile_image_url
@@ -558,11 +536,6 @@
                 if(data==undefined){
                     continue
                 }
-                if('consent_commands' in config && config.consent_commands.includes(data.split(' ')[0])){
-                    const login=prefix.split('!')[0]
-                    addConsent(login)
-                    continue
-                }
                 if(data.toLowerCase().startsWith('!getclippy')){
                     IRCSendChat('Get SugoiClippy at https://github.com/sugoidogo/clippy')
                     continue
@@ -570,10 +543,6 @@
                 if('command' in config && config.commands.includes(data.split(' ')[0])){
                     const login=prefix.split('!')[0]
                     console.debug(login+':'+data)
-                    if(data.split(' ')[1]=='consent'){
-                        addConsent(login)
-                        continue
-                    }
                     let badges=tags.split('badges=').pop()
                     badges=badges.split(';').shift()
                     badges=badges.split(',')
@@ -592,19 +561,6 @@
         }
     }
 
-    async function addConsent(login){
-        consent.push(login)
-        fetch('https://ts.sugoidogo.com/consent.json',{
-            headers: tokens.auth_headers,
-            method: 'POST',
-            body: JSON.stringify(consent)
-        })
-        IRCSendChat(login+', Thank you for your consent!')
-        if(awaitingConsent.includes(login)){
-            shoutout(login)
-        }
-    }
-
     if('assets' in config){
         for(const asset of config.assets){
             if(!asset.data.startsWith('data:')){
@@ -613,34 +569,5 @@
             loadAsset(asset.data,asset.filename,true)
         }
     }
-
-    fetch('https://ts.sugoidogo.com/consent.json',{
-        headers: tokens.auth_headers
-    })
-    .then(response=>{
-        if(response.ok){
-            return response.json()
-        }
-        let postbody='[]'
-        try{
-            consent=window.localStorage.getItem('consent')||[broadcaster.login]
-            if(typeof consent === 'string' || consent instanceof String){
-                postbody=consent
-                consent=JSON.parse(postbody)
-            }else{
-                postbody=JSON.stringify(consent)
-            }
-        }catch(e){
-            console.warn(e)
-            consent=[broadcaster.login]
-            postbody=JSON.stringify(consent)
-        }
-        fetch('https://ts.sugoidogo.com/consent.json',{
-            headers: tokens.auth_headers,
-            method: 'POST',
-            body:postbody
-        })
-        return consent
-    }).then(json=>consent=json)
 
 </script>
