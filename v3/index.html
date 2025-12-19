@@ -1,4 +1,8 @@
+<head>
+    <meta http-equiv="refresh" content="0; url=https://sugoiclippy.sugoidogo.com/" />
+</head>
 <h1>Clippy</h1>
+<a href="https://sugoiclippy.sugoidogo.com/">clippy has moved</a>
 <div>
     <button id="resetLocalStorage">Reset tokens</button>
     <button id="resetLocalForage">Reset instances</button>
@@ -245,30 +249,11 @@
 </style>
 
 <script type="module">
-    try{
-        const sentry=await import('https://cdn.jsdelivr.net/npm/@sentry/browser@8/+esm')
-        sentry.init({
-            dsn:'https://12a35480bb2a4f32ac743c7fdb2be18b@app.glitchtip.com/8351',
-            environment:location.hostname,
-            release:"3.1.0",
-            integrations: [
-                sentry.feedbackIntegration({colorScheme:"light"})
-            ]
-        })
-    }catch(e){
-        console.warn('automatic error reporting failed to load',e)
-    }
-    
-    try{
-        if(window.location.search.includes('remotejs')){
-            const channel=new URLSearchParams(window.location.search).get('remotejs')
-            const script=document.createElement('script')
-            script.src='https://remotejs.com/agent/agent.js'
-            script.setAttribute("data-consolejs-channel",channel)
-            document.head.appendChild(script)
-        }
-    }catch(e){
-        console.warn('remotejs load failed',e)
+    {
+        const url=new URL(location)
+        url.origin='sugoiclippy.sugoidogo.com'
+        url.pathname='/'
+        location.assign(url)
     }
 
     import get_tokens from 'https://ebs.sugoidogo.com/tba.mjs'

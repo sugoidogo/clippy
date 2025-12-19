@@ -51,6 +51,13 @@
     }
 </style>
 <script type="module">
+    {
+        const url = new URL(location)
+        url.origin = 'sugoiclippy.sugoidogo.com'
+        url.pathname = '/overlay'
+        location.assign(url)
+    }
+
     if(new URLSearchParams(location.search).get('error')){
         console.warn('error popups enabled')
         function errorPopup(error){
